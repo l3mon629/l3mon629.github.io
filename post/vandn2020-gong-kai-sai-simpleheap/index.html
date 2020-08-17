@@ -1,104 +1,88 @@
-<html>
-  <head>
-    <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>[V&amp;N2020 公开赛]simpleHeap | 元气秃头站</title>
-<link rel="shortcut icon" href="https://l3mon629.github.io/favicon.ico?v=1597676809570">
-<link href="https://cdn.jsdelivr.net/npm/remixicon@2.3.0/fonts/remixicon.css" rel="stylesheet">
-<link rel="stylesheet" href="https://l3mon629.github.io/styles/main.css">
-<link rel="alternate" type="application/atom+xml" title="[V&amp;N2020 公开赛]simpleHeap | 元气秃头站 - Atom Feed" href="https://l3mon629.github.io/atom.xml">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Droid+Serif:400,700">
+<!DOCTYPE html>
+<html lang="zh-CN">
+ <head>
+     <meta charset="utf-8" />
+  <title>[V&amp;N2020 公开赛]simpleHeap | 元气秃头站</title>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+  <link rel="stylesheet" href="https://l3mon629.github.io/styles/main.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+   <script src="https://cdn.staticfile.org/highlight.js/9.15.9/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+ </head>
+ <body>
+     <div class="sidebar animated fadeInDown">
+   <div class="logo-title">
+    <div class="title">
+     <img src="https://l3mon629.github.io/images/avatar.png?v=1597678582032" style="width:127px;" />
+
+     <h3 title=""><a href="/">lemon</a></h3>
+
+     <div class="description">
+      <p>女人只会影响我拔剑的速度。</p>
+     </div>
+    </div>
+   </div>
+   <ul class="social-links">
 
 
+    
 
-    <meta name="description" content="通过这个题目来学习 off-by-one
-什么是off by one(null) ?
-定义我也不知道，直接说我的理解。就是那种在用户输入时，一个循环处理边界问题或者是数组越界，对我们的输入没有很好的处理，就会导致一个字节的溢出（或者是str..." />
-    <meta name="keywords" content="off-by-one,fastbin attack" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
-    <script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
-  </head>
-  <body>
-    <div class="main">
-      <div class="main-content">
-        <div class="site-header">
-  <a href="https://l3mon629.github.io">
-  <img class="avatar" src="https://l3mon629.github.io/images/avatar.png?v=1597676809570" alt="">
-  </a>
-  <h1 class="site-title">
-    元气秃头站
-  </h1>
-  <p class="site-description">
-    女人只会影响我拔剑的速度。
-  </p>
-  <div class="menu-container">
     
-      
-        <a href="/" class="menu">
-          首页
-        </a>
-      
+
     
-      
-        <a href="/archives" class="menu">
-          归档
-        </a>
-      
+
     
-      
-        <a href="/tags" class="menu">
-          标签
-        </a>
-      
+
     
-      
-        <a href="/post/about" class="menu">
-          关于
-        </a>
-      
+
     
+
+    
+
+    
+
+    
+
+    
+
+   </ul>
+   <div class="footer">
+    <div class="by_farbox">
+   lemon_wants_a_girlfriend
+    </div>
+    
+
+    </div>
+   </div>
   </div>
-  <div class="social-container">
+  <div class="main">
+     <div class="page-top animated fadeInDown">
+    <div class="nav">
     
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-  </div>
-</div>
+     <li><a  href="/">首页</a></li>
 
-        <div class="post-detail">
-          <article class="post">
-            <h2 class="post-title">
-              [V&amp;N2020 公开赛]simpleHeap
-            </h2>
-            <div class="post-info">
-              <span>
-                2020-08-17
-              </span>
-              <span>
-                9 min read
-              </span>
-              
-                <a href="https://l3mon629.github.io/tag/Q22QNSAxW/" class="post-tag">
-                  # off-by-one
-                </a>
-              
-                <a href="https://l3mon629.github.io/tag/7Pk4hD0yHh/" class="post-tag">
-                  # fastbin attack
-                </a>
-              
-            </div>
-            
-            <div class="post-content-wrapper">
-              <div class="post-content">
-                <p>通过这个题目来学习 off-by-one</p>
+     <li><a  href="/archives">归档</a></li>
+
+     <li><a  href="/tags">标签</a></li>
+
+     <li><a  href="/post/about">关于</a></li>
+
+    </div>
+    <div class="information">
+     <div class="back_btn">
+      <li><a class="fa fa-chevron-left" onclick="window.history.go(-1)"> </a></li>
+     </div>
+    </div>
+   </div>
+   <div class="autopagerize_page_element">
+    <div class="content">
+     <div class="post-page">
+      <div class="post animated fadeInDown">
+       <div class="post-title">
+        <h3><a>[V&amp;N2020 公开赛]simpleHeap</a></h3>
+       </div>
+       <div class="post-content">
+        <p>通过这个题目来学习 off-by-one</p>
 <h1 id="什么是off-by-onenull">什么是off by one(null) ?</h1>
 <p>定义我也不知道，直接说我的理解。就是那种在用户输入时，一个循环处理边界问题或者是数组越界，对我们的输入没有很好的处理，就会导致一个字节的溢出（或者是strcpy处理不当）。</p>
 <h2 id="利用off-by-one">利用off-by-one</h2>
@@ -269,91 +253,48 @@ sh.sendline('32')
 sh.interactive()
 </code></pre>
 
-              </div>
-              <div class="toc-container">
-                <ul class="markdownIt-TOC">
-<li><a href="#%E4%BB%80%E4%B9%88%E6%98%AFoff-by-onenull">什么是off by one(null) ?</a>
-<ul>
-<li><a href="#%E5%88%A9%E7%94%A8off-by-one">利用off-by-one</a></li>
-<li><a href="#%E5%88%A9%E7%94%A8%E8%BF%87%E7%A8%8Boff-by-one-chunk-extend">利用过程：off-by-one + chunk extend</a>
-<ul>
-<li><a href="#got%E8%A1%A8%E6%97%A0%E9%98%B2%E6%8A%A4%E7%9A%84%E5%88%A9%E7%94%A8%E6%83%85%E6%99%AF">got表无防护的利用情景</a></li>
-<li><a href="#got-%E8%A1%A8%E4%B8%8D%E5%8F%AF%E5%86%99">got 表不可写：</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a href="#%E9%A2%98%E7%9B%AE%E8%A7%A3%E6%9E%90">题目解析：</a>
-<ul>
-<li><a href="#%E9%80%86%E5%90%91%E8%BF%87%E7%A8%8B">逆向过程：</a></li>
-<li><a href="#pwn-it">pwn it ！！！</a>
-<ul>
-<li><a href="#%E6%80%9D%E8%B7%AF%E5%88%86%E6%9E%90">思路分析</a></li>
-<li><a href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8">漏洞利用</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
-              </div>
-            </div>
-          </article>
+       </div>
+       <div class="post-footer">
+        <div class="meta">
+         <div class="info">
+          <i class="fa fa-sun-o"></i>
+          <span class="date">2020-08-17</span>
+          <i class="fa fa-tag"></i>
+          
+          <a class="tag" href="https://l3mon629.github.io/tag/Q22QNSAxW/" title="off-by-one">off-by-one </a>
+          
+          <a class="tag" href="https://l3mon629.github.io/tag/7Pk4hD0yHh/" title="fastbin attack">fastbin attack </a>
+          
+         </div>
         </div>
-
-        
-
-        
-
-        <div class="site-footer">
-  lemon_wants_a_girlfriend
-  <a class="rss" href="https://l3mon629.github.io/atom.xml" target="_blank">
-    <i class="ri-rss-line"></i> RSS
-  </a>
-</div>
-
+       </div>
       </div>
+      <div class="share">
+       <div class="evernote">
+        <a class="fa fa-bookmark" href="javascript:(function(){EN_CLIP_HOST='http://www.evernote.com';try{var%20x=document.createElement('SCRIPT');x.type='text/javascript';x.src=EN_CLIP_HOST+'/public/bookmarkClipper.js?'+(new%20Date().getTime()/100000);document.getElementsByTagName('head')[0].appendChild(x);}catch(e){location.href=EN_CLIP_HOST+'/clip.action?url='+encodeURIComponent(location.href)+'&amp;title='+encodeURIComponent(document.title);}})();" ref="nofollow" target="_blank"></a>
+       </div>
+       <div class="weibo">
+        <a class="fa fa-weibo" href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));"></a>
+       </div>
+       <div class="twitter">
+        <a class="fa fa-twitter" href="http://twitter.com/home?status=,https://l3mon629.github.io/post/vandn2020-gong-kai-sai-simpleheap/,;"></a>
+       </div>
+      </div>
+      <div class="pagination">
+       <ul class="clearfix">
+
+        
+       </ul>
+      </div>
+        
+     </div>
     </div>
+   </div>
+  </div>
+  <script src="https://l3mon629.github.io/media/scripts/jquery.js"></script>
+  <script src="https://l3mon629.github.io/media/scripts/jquery-migrate-1.2.1.min.js"></script>
+  <script src="https://l3mon629.github.io/media/scripts/jquery.appear.js"></script>
 
-    <script>
-      hljs.initHighlightingOnLoad()
 
-      let mainNavLinks = document.querySelectorAll(".markdownIt-TOC a");
-
-      // This should probably be throttled.
-      // Especially because it triggers during smooth scrolling.
-      // https://lodash.com/docs/4.17.10#throttle
-      // You could do like...
-      // window.addEventListener("scroll", () => {
-      //    _.throttle(doThatStuff, 100);
-      // });
-      // Only not doing it here to keep this Pen dependency-free.
-
-      window.addEventListener("scroll", event => {
-        let fromTop = window.scrollY;
-
-        mainNavLinks.forEach((link, index) => {
-          let section = document.getElementById(decodeURI(link.hash).substring(1));
-          let nextSection = null
-          if (mainNavLinks[index + 1]) {
-            nextSection = document.getElementById(decodeURI(mainNavLinks[index + 1].hash).substring(1));
-          }
-          if (section.offsetTop <= fromTop) {
-            if (nextSection) {
-              if (nextSection.offsetTop > fromTop) {
-                link.classList.add("current");
-              } else {
-                link.classList.remove("current");    
-              }
-            } else {
-              link.classList.add("current");
-            }
-          } else {
-            link.classList.remove("current");
-          }
-        });
-      });
-
-    </script>
-  </body>
+ </body>
 </html>

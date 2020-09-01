@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1598941117550" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1598941170772" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1598941117550" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1598941170772" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-09-01</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">9.4
+                                    href="#">12.2
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1891</a></span>
+                                    <span class="post-words">words:<a href="#">2335</a></span>
                                     
                                             Views:
                                             <span data-hk-page="current"> - </span>
@@ -206,7 +206,161 @@ some_functions_addr()</p>
 <p>malloc(size(1) + size(2))<br>
 edit(1,写到chunk2的fd pointer)<br>
 然后就是fastbin attack</p>
-<p>嗯，我一开始也这样做的，很顺利在本地getshell，但是远程打不通</p>
+<p>嗯，我一开始也这样做的，很顺利在本地getshell，但是远程打不通<br>
+在仓库里有本题目的源码</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;unistd.h&gt;
+
+void read_input(char *buf,size_t size){
+	int ret ;
+    ret = read(0,buf,size);
+    if(ret &lt;=0){
+        puts(&quot;Error&quot;);
+        _exit(-1);
+    }	
+}
+
+struct heap {
+	size_t size ;
+	char *content ;
+};
+
+struct heap *heaparray[10];
+
+void menu(){
+	puts(&quot;--------------------------------&quot;);
+	puts(&quot;          Heap Creator          &quot;);
+	puts(&quot;--------------------------------&quot;);
+	puts(&quot; 1. Create a Heap               &quot;);
+	puts(&quot; 2. Edit a Heap                 &quot;);
+	puts(&quot; 3. Show a Heap                 &quot;);
+	puts(&quot; 4. Delete a Heap               &quot;);
+	puts(&quot; 5. Exit                        &quot;);
+	puts(&quot;--------------------------------&quot;);
+	printf(&quot;Your choice :&quot;);
+}
+
+void create_heap(){
+	int i ;
+	char buf[8];
+	size_t size = 0;
+	for(i = 0 ; i &lt; 10 ; i++){
+		if(!heaparray[i]){
+			heaparray[i] = (struct heap *)malloc(sizeof(struct heap));
+			if(!heaparray[i]){
+				puts(&quot;Allocate Error&quot;);
+				exit(1);
+			}
+			printf(&quot;Size of Heap : &quot;);
+			read(0,buf,8);
+			size = atoi(buf);
+			heaparray[i]-&gt;content = (char *)malloc(size);
+			if(!heaparray[i]-&gt;content){
+				puts(&quot;Allocate Error&quot;);
+				exit(2);
+			}
+			heaparray[i]-&gt;size = size ;
+			printf(&quot;Content of heap:&quot;);
+			read_input(heaparray[i]-&gt;content,size);
+			puts(&quot;SuccessFul&quot;);
+			break ;
+		}
+	}
+}
+
+void edit_heap(){
+	int idx ;
+	char buf[4];
+	printf(&quot;Index :&quot;);
+	read(0,buf,4);
+	idx = atoi(buf);
+	if(idx &lt; 0 || idx &gt;= 10){
+		puts(&quot;Out of bound!&quot;);
+		_exit(0);
+	}
+	if(heaparray[idx]){
+		printf(&quot;Content of heap : &quot;);
+		read_input(heaparray[idx]-&gt;content,heaparray[idx]-&gt;size+1);
+		puts(&quot;Done !&quot;);
+	}else{
+		puts(&quot;No such heap !&quot;);
+	}
+}
+
+void show_heap(){
+	int idx ;
+	char buf[4];
+	printf(&quot;Index :&quot;);
+	read(0,buf,4);
+	idx = atoi(buf);
+	if(idx &lt; 0 || idx &gt;= 10){
+		puts(&quot;Out of bound!&quot;);
+		_exit(0);
+	}
+	if(heaparray[idx]){
+		printf(&quot;Size : %ld\nContent : %s\n&quot;,heaparray[idx]-&gt;size,heaparray[idx]-&gt;content);
+		puts(&quot;Done !&quot;);
+	}else{
+		puts(&quot;No such heap !&quot;);
+	}
+
+}
+
+void delete_heap(){
+	int idx ;
+	char buf[4];
+	printf(&quot;Index :&quot;);
+	read(0,buf,4);
+	idx = atoi(buf);
+	if(idx &lt; 0 || idx &gt;= 10){
+		puts(&quot;Out of bound!&quot;);
+		_exit(0);
+	}
+	if(heaparray[idx]){
+		free(heaparray[idx]-&gt;content);
+		free(heaparray[idx]);
+		heaparray[idx] = NULL ;
+		puts(&quot;Done !&quot;);	
+	}else{
+		puts(&quot;No such heap !&quot;);
+	}
+
+}
+
+
+int main(){
+	char buf[4];
+	setvbuf(stdout,0,2,0);
+	setvbuf(stdin,0,2,0);
+	while(1){
+		menu();
+		read(0,buf,4);
+		switch(atoi(buf)){
+			case 1 :
+				create_heap();
+				break ;
+			case 2 :
+				edit_heap();
+				break ;
+			case 3 :
+				show_heap();
+				break ;
+			case 4 :
+				delete_heap();
+				break ;
+			case 5 :
+				exit(0);
+				break ;
+			default :
+				puts(&quot;Invalid Choice&quot;);
+				break;
+		}
+
+	}
+	return 0 ;
+}
+</code></pre>
 <h2 id="逆向">逆向</h2>
 <p>很容易，没有去除符号表，很nice<br>
 创建堆块，这里malloc(0x10)来管理堆块<br>
@@ -518,8 +672,8 @@ p.interactive()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/&sharesource=qzone&title=一道got表可写的off-by-one — hitcontraining_heapcreator&pics=https://l3mon629.github.io/images/avatar.png?v=1598941117550&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/&sharesource=weibo&title=一道got表可写的off-by-one — hitcontraining_heapcreator + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1598941117550 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/&sharesource=qzone&title=一道got表可写的off-by-one — hitcontraining_heapcreator&pics=https://l3mon629.github.io/images/avatar.png?v=1598941170772&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/&sharesource=weibo&title=一道got表可写的off-by-one — hitcontraining_heapcreator + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1598941170772 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -609,7 +763,7 @@ p.interactive()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1598941117550);
+                    newDate.setTime(1598941170772);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

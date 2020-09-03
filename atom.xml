@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://l3mon629.github.io</id>
     <title>lemon的自留地～</title>
-    <updated>2020-09-02T11:46:03.955Z</updated>
+    <updated>2020-09-03T07:48:15.494Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://l3mon629.github.io"/>
     <link rel="self" href="https://l3mon629.github.io/atom.xml"/>
@@ -10,6 +10,13 @@
     <logo>https://l3mon629.github.io/images/avatar.png</logo>
     <icon>https://l3mon629.github.io/favicon.ico</icon>
     <rights>All rights reserved 2020, lemon的自留地～</rights>
+    <entry>
+        <title type="html"><![CDATA[gyctf_2020_some_thing_exceting]]></title>
+        <id>https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/</id>
+        <link href="https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/">
+        </link>
+        <updated>2020-09-03T06:22:15.000Z</updated>
+    </entry>
     <entry>
         <title type="html"><![CDATA[ret2csu—缩短payload]]></title>
         <id>https://l3mon629.github.io/post/ret2csu-suo-duan-payload/</id>

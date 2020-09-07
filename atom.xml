@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://l3mon629.github.io</id>
     <title>lemon的自留地～</title>
-    <updated>2020-09-07T13:50:11.637Z</updated>
+    <updated>2020-09-07T15:36:57.074Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://l3mon629.github.io"/>
     <link rel="self" href="https://l3mon629.github.io/atom.xml"/>
@@ -10,6 +10,13 @@
     <logo>https://l3mon629.github.io/images/avatar.png</logo>
     <icon>https://l3mon629.github.io/favicon.ico</icon>
     <rights>All rights reserved 2020, lemon的自留地～</rights>
+    <entry>
+        <title type="html"><![CDATA[buu-pwn(2)]]></title>
+        <id>https://l3mon629.github.io/post/buu-pwn2/</id>
+        <link href="https://l3mon629.github.io/post/buu-pwn2/">
+        </link>
+        <updated>2020-09-07T15:34:12.000Z</updated>
+    </entry>
     <entry>
         <title type="html"><![CDATA[axb_2019_heap]]></title>
         <id>https://l3mon629.github.io/post/axb_2019_heap/</id>
@@ -72,12 +79,5 @@
         <link href="https://l3mon629.github.io/post/buu-pwn1/">
         </link>
         <updated>2020-08-25T00:10:43.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[[V&N2020 公开赛]easyTHeap]]></title>
-        <id>https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/</id>
-        <link href="https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/">
-        </link>
-        <updated>2020-08-23T08:30:13.000Z</updated>
     </entry>
 </feed>

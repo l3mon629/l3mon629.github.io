@@ -162,33 +162,139 @@
 
             <div class="main">
                 <div class="container">
-                    <div class="post-wrap archive">
-                        
+                    <article class="post-wrap">
+                        <header class="post-header">
+                            <h1 class="post-title">
+                                操作系统
+                            </h1>
                             
-                                <h3>
-                                    2020
-                                </h3>
+                                <!--en-->
+                                <div class="post-meta en">
+                                    Author:
+                                    <a itemprop="author" rel="author" href="/">
+                                        lemon的自留地～
+                                    </a>
+                                    <span class="post-time">
+                                Date: <a href="#">2020-09-08</a>
+                            </span>
+                                    <span class="post-readtime">Reading Time:<a
+                                    href="#">0.9
+                                    mins</a></span>
+                                    <span class="post-words">words:<a href="#">233</a></span>
+                                    
+                                            Views:
+                                            <span data-hk-page="current"> - </span>
+                                            
+                                </div>
+                                
+                        </header>
+                        
+                        <div class="post-content">
+                            <h2 id="揭开钢琴的盖子">揭开钢琴的盖子</h2>
+<h3 id="初始化">初始化</h3>
+<p>打开电源后发生了什么？<br>
+关注ip指针指向的内容，这部分显然由硬件的设计者来决定</p>
+<blockquote>
+<p>x86PC</p>
+</blockquote>
+<ul>
+<li>刚开机的时候cpu处于实模式，按照实模式来寻址，cs左移四位+ip</li>
+<li>开机时，CS = 0xFFFF IP = 0x0000</li>
+<li>寻址到0xFFFF0，为ROM BIOS映射区（BIOS = basic input output system）</li>
+<li>检查RAM，键盘，显示器和软硬磁盘等</li>
+<li>将0磁道0扇区读入0x7c00处</li>
+<li>设置CS = 0x07c0 IP=0x0000</li>
+</ul>
+<p>0x7c00处存放的代码就是从引导扇区读入的那512个字节</p>
+<h3 id="bootsecs">bootsec.s</h3>
+<p>第一部分：将自身，即bootsec由段0x07c0移动到段0x9000，共计256个字，然后跳转到go标号处，即下一条指令继续执行<br>
+<img src="https://l3mon629.github.io/post-images/1599564105580.png" alt="" loading="lazy"><br>
+第二部分：利用BIOS中断INT 0x13将setup模块从磁盘第二个扇区开始读到0x90200处，共读四个扇区<br>
+<img src="https://l3mon629.github.io/post-images/1599564610431.png" alt="" loading="lazy"><br>
+第三部分：setup模块读入后<br>
+显示字符信息<br>
+<img src="https://l3mon629.github.io/post-images/1599564910858.png" alt="" loading="lazy"></p>
+
+                        </div>
+                        
+                            <div class="post-toc">
+                                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E6%8F%AD%E5%BC%80%E9%92%A2%E7%90%B4%E7%9A%84%E7%9B%96%E5%AD%90">揭开钢琴的盖子</a>
+<ul>
+<li><a href="#%E5%88%9D%E5%A7%8B%E5%8C%96">初始化</a></li>
+<li><a href="#bootsecs">bootsec.s</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+                            </div>
+                            
                                 
                                     
+                                        <!--en-->
+                                        <section class="post-copyright en">
+                                            <p class="copyright-item">
+                                                <span>Author:</span>
+                                                <span>lemon的自留地～</span>
+                                            </p>
 
-                                        <article class="archive-item">
-                                            <a class="archive-item-link" href="https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/">
-                                                [V&amp;N2020 公开赛]easyTHeap
-                                            </a>
-                                            <span class="archive-item-date">2020-08-23 </span>
-                                        </article>
+                                            <p class="copyright-item">
+                                                <span>Permalink:</span>
+                                                <span><a href="https://l3mon629.github.io/post/cao-zuo-xi-tong/">https://l3mon629.github.io/post/cao-zuo-xi-tong/</a></span>
+                                            </p>
+
+                                            <p class="copyright-item">
+                                                <span>License:</span>
+                                                <span>MIT License</span>
+                                            </p>
+                                        </section>
                                         
-                                            
                                                 
-                    </div>
-                    <div class="pagination-container">
-                        
-                                                
+                                                    
+                                                        <!-- Share-->
+                                                        <span style="margin-right:15px">
+                                                    <i class="post-share"></i>
+                                                    <span>Share:</span>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/cao-zuo-xi-tong/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/cao-zuo-xi-tong/&sharesource=qzone&title=操作系统&pics=https://l3mon629.github.io/images/avatar.png?v=1599565058222&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/cao-zuo-xi-tong/&sharesource=weibo&title=操作系统 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599565058222 "><i class="fa fa-weibo "></i></a>
                                                         
+                                                                </span>
+                                                                <!--en-->
+                                                                <section class="post-tags en ">
+                                                                    <div>
+                                                                        <span>Tag(s):</span>
+                                                                        <span class="tag ">
+                        
+                                                            </span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <a href="javascript:window.history.back();">back</a>
+                                                                        <span>&dot;</span>
+                                                                        <a href="#">home</a>
+                                                                    </div>
+                                                                </section>
                                                                 
-                    </div>
+                                                                                <!---->
+                                                                                <section class="post-nav">
+                                                                                    
+                                                                                            
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/bjdctf-2ndpwn-ti-mu-quan-jie/">
+                                                                                                    [BJDCTF 2nd]pwn题目全解
+                                                                                                </a>
+                                                                                                
+                                                                                </section>
+                    </article>
                 </div>
+                
+                                            
             </div>
+    </div>
+    </div>
     </div>
     
         <footer id="footer" class="footer">
@@ -251,5 +357,8 @@
                 </script>
         </div>
 </body>
+<script>
+    scroll();
+</script>
 
 </html>

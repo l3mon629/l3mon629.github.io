@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1599567626919" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1599659265015" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1599567626919" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1599659265015" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,12 +178,14 @@
                                 Date: <a href="#">2020-09-07</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">2.4
+                                    href="#">5.1
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">635</a></span>
+                                    <span class="post-words">words:<a href="#">1374</a></span>
                                     
                                         <span class="post-category">
                                 Category:
+                                
+                                <a href="https://l3mon629.github.io/tag/8UT0h8tF6/">笔记</a>
                                 
                                 <a href="https://l3mon629.github.io/tag/mGjsDXVh8/">PHP学习</a>
                                 
@@ -316,6 +318,58 @@ var_dump($stu);
 <li>private，私有，只允许在定义类内部访问</li>
 </ul>
 <p>方法可以没有没有修饰限定符，默认public</p>
+<h2 id="类内部对象">类内部对象</h2>
+<blockquote>
+<p>概念<br>
+$this  方法内部内置的一个对象，会自动指向来调用方法的对象</p>
+</blockquote>
+<blockquote>
+<p>步骤<br>
+1，声明类结构<br>
+2，明确私有成员，不限定成员的访问限定修饰符<br>
+3，私有成员需要在某种情况下被访问：增加方法，在方法里使用$this访问</p>
+</blockquote>
+<p>直接看代码好了</p>
+<pre><code class="language-php">&lt;?php
+
+class Saler{
+    public $count = 100;
+
+    public function getV(){
+        echo $count;    //会报错，提示未定义变量
+    }
+}
+
+$s = new Saler();
+$s -&gt; getV();
+</code></pre>
+<pre><code class="language-php">&lt;?php
+
+class Saler{
+    public $count = 100;
+
+    public function getV(){
+        var_dump($this);
+        echo &quot;&lt;br&gt;&quot; . $this -&gt; count;    
+    }
+}
+
+$s = new Saler();
+$s -&gt; getV();
+</code></pre>
+<p>运行结果<br>
+<img src="https://l3mon629.github.io/post-images/1599658581979.png" alt="" loading="lazy"></p>
+<blockquote>
+<p>注意，$this对象是在类内部访问的，因此可以访问类的所有的属性和方法，不受访问修饰限定符的限制</p>
+</blockquote>
+<blockquote>
+<p><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>t</mi><mi>h</mi><mi>i</mi><mi>s</mi><mi>c</mi><mi>l</mi><mi>a</mi><mi>s</mi><mi>s</mi><mi mathvariant="normal">和</mi><mi>n</mi><mi>e</mi><mi>w</mi><mi mathvariant="normal">的</mi><mi mathvariant="normal">关</mi><mi mathvariant="normal">系</mi><mi mathvariant="normal">原</mi><mi mathvariant="normal">理</mi><mi>c</mi><mi>l</mi><mi>a</mi><mi>s</mi><mi>s</mi><mo>:</mo><mi mathvariant="normal">定</mi><mi mathvariant="normal">义</mi><mi mathvariant="normal">类</mi><mi mathvariant="normal">结</mi><mi mathvariant="normal">构</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">属</mi><mi mathvariant="normal">于</mi><mi mathvariant="normal">非</mi><mi mathvariant="normal">执</mi><mi mathvariant="normal">行</mi><mi mathvariant="normal">段</mi><mi mathvariant="normal">代</mi><mi mathvariant="normal">码</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">因</mi><mi mathvariant="normal">此</mi><mi mathvariant="normal">会</mi><mi mathvariant="normal">被</mi><mi mathvariant="normal">加</mi><mi mathvariant="normal">载</mi><mi mathvariant="normal">到</mi><mi mathvariant="normal">代</mi><mi mathvariant="normal">码</mi><mi mathvariant="normal">段</mi><mi mathvariant="normal">（</mi><mi mathvariant="normal">编</mi><mi mathvariant="normal">译</mi><mi mathvariant="normal">）</mi><mi>n</mi><mi>e</mi><mi>w</mi><mo>:</mo><mi mathvariant="normal">实</mi><mi mathvariant="normal">例</mi><mi mathvariant="normal">化</mi><mi mathvariant="normal">对</mi><mi mathvariant="normal">象</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">先</mi><mi mathvariant="normal">判</mi><mi mathvariant="normal">定</mi><mi mathvariant="normal">类</mi><mi mathvariant="normal">在</mi><mi mathvariant="normal">内</mi><mi mathvariant="normal">存</mi><mi mathvariant="normal">里</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">否</mi><mi mathvariant="normal">存</mi><mi mathvariant="normal">在</mi><mi mathvariant="normal">。</mi><mi mathvariant="normal">不</mi><mi mathvariant="normal">存</mi><mi mathvariant="normal">在</mi><mi mathvariant="normal">报</mi><mi mathvariant="normal">错</mi><mi mathvariant="normal">。</mi><mi mathvariant="normal">若</mi><mi mathvariant="normal">存</mi><mi mathvariant="normal">在</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">则</mi><mi mathvariant="normal">将</mi><mi mathvariant="normal">类</mi><mi mathvariant="normal">内</mi><mi mathvariant="normal">部</mi><mi mathvariant="normal">的</mi><mi mathvariant="normal">属</mi><mi mathvariant="normal">性</mi><mi mathvariant="normal">复</mi><mi mathvariant="normal">制</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">份</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">然</mi><mi mathvariant="normal">后</mi><mi mathvariant="normal">在</mi><mi mathvariant="normal">内</mi><mi mathvariant="normal">存</mi><mi mathvariant="normal">（</mi><mi>h</mi><mi>e</mi><mi>a</mi><mi>p</mi><mi mathvariant="normal">）</mi><mi mathvariant="normal">开</mi><mi mathvariant="normal">辟</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">块</mi><mi mathvariant="normal">内</mi><mi mathvariant="normal">存</mi><mi mathvariant="normal">空</mi><mi mathvariant="normal">间</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">将</mi><mi mathvariant="normal">属</mi><mi mathvariant="normal">性</mi><mi mathvariant="normal">放</mi><mi mathvariant="normal">到</mi><mi mathvariant="normal">里</mi><mi mathvariant="normal">面</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">同</mi><mi mathvariant="normal">时</mi><mi mathvariant="normal">内</mi><mi mathvariant="normal">部</mi><mi mathvariant="normal">有</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">个</mi><mi mathvariant="normal">指</mi><mi mathvariant="normal">针</mi><mi mathvariant="normal">指</mi><mi mathvariant="normal">向</mi><mi mathvariant="normal">类</mi><mi mathvariant="normal">的</mi><mi mathvariant="normal">内</mi><mi mathvariant="normal">存</mi><mi mathvariant="normal">空</mi><mi mathvariant="normal">间</mi><mi mathvariant="normal">对</mi><mi mathvariant="normal">象</mi><mi mathvariant="normal">访</mi><mi mathvariant="normal">问</mi><mi mathvariant="normal">属</mi><mi mathvariant="normal">性</mi><mi mathvariant="normal">即</mi><mi mathvariant="normal">访</mi><mi mathvariant="normal">问</mi><mi mathvariant="normal">的</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">对</mi><mi mathvariant="normal">象</mi><mi mathvariant="normal">空</mi><mi mathvariant="normal">间</mi><mi mathvariant="normal">里</mi><mi mathvariant="normal">存</mi><mi mathvariant="normal">储</mi><mi mathvariant="normal">的</mi><mi mathvariant="normal">部</mi><mi mathvariant="normal">分</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">对</mi><mi mathvariant="normal">象</mi><mi mathvariant="normal">访</mi><mi mathvariant="normal">问</mi><mi mathvariant="normal">方</mi><mi mathvariant="normal">法</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">通</mi><mi mathvariant="normal">过</mi><mi mathvariant="normal">内</mi><mi mathvariant="normal">部</mi><mi mathvariant="normal">指</mi><mi mathvariant="normal">针</mi><mi mathvariant="normal">找</mi><mi mathvariant="normal">到</mi><mi mathvariant="normal">类</mi><mi mathvariant="normal">空</mi><mi mathvariant="normal">间</mi><mi mathvariant="normal">中</mi><mi mathvariant="normal">的</mi><mi mathvariant="normal">方</mi><mi mathvariant="normal">法</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">然</mi><mi mathvariant="normal">后</mi><mi mathvariant="normal">再</mi><mi mathvariant="normal">内</mi><mi mathvariant="normal">存</mi><mi mathvariant="normal">（</mi><mi mathvariant="normal">栈</mi><mi mathvariant="normal">）</mi><mi mathvariant="normal">开</mi><mi mathvariant="normal">辟</mi><mi mathvariant="normal">运</mi><mi mathvariant="normal">行</mi></mrow><annotation encoding="application/x-tex">this class和new的关系原理
+class:定义类结构，属于非执行段代码，因此会被加载到代码段（编译）
+new:实例化对象，先判定类在内存里是否存在。不存在报错。若存在，则将类内部的属性复制一份，然后在内存（heap）开辟一块内存空间，将属性放到里面，同时内部有一个指针指向类的内存空间
+对象访问属性即访问的是对象空间里存储的部分，对象访问方法是通过内部指针找到类空间中的方法，然后再内存（栈）开辟运行
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.69444em;vertical-align:0em;"></span><span class="mord mathdefault">t</span><span class="mord mathdefault">h</span><span class="mord mathdefault">i</span><span class="mord mathdefault">s</span><span class="mord mathdefault">c</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">a</span><span class="mord mathdefault">s</span><span class="mord mathdefault">s</span><span class="mord cjk_fallback">和</span><span class="mord mathdefault">n</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02691em;">w</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">关</span><span class="mord cjk_fallback">系</span><span class="mord cjk_fallback">原</span><span class="mord cjk_fallback">理</span><span class="mord mathdefault">c</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">a</span><span class="mord mathdefault">s</span><span class="mord mathdefault">s</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord cjk_fallback">定</span><span class="mord cjk_fallback">义</span><span class="mord cjk_fallback">类</span><span class="mord cjk_fallback">结</span><span class="mord cjk_fallback">构</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">属</span><span class="mord cjk_fallback">于</span><span class="mord cjk_fallback">非</span><span class="mord cjk_fallback">执</span><span class="mord cjk_fallback">行</span><span class="mord cjk_fallback">段</span><span class="mord cjk_fallback">代</span><span class="mord cjk_fallback">码</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">因</span><span class="mord cjk_fallback">此</span><span class="mord cjk_fallback">会</span><span class="mord cjk_fallback">被</span><span class="mord cjk_fallback">加</span><span class="mord cjk_fallback">载</span><span class="mord cjk_fallback">到</span><span class="mord cjk_fallback">代</span><span class="mord cjk_fallback">码</span><span class="mord cjk_fallback">段</span><span class="mord cjk_fallback">（</span><span class="mord cjk_fallback">编</span><span class="mord cjk_fallback">译</span><span class="mord cjk_fallback">）</span><span class="mord mathdefault">n</span><span class="mord mathdefault">e</span><span class="mord mathdefault" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">:</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord cjk_fallback">实</span><span class="mord cjk_fallback">例</span><span class="mord cjk_fallback">化</span><span class="mord cjk_fallback">对</span><span class="mord cjk_fallback">象</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">先</span><span class="mord cjk_fallback">判</span><span class="mord cjk_fallback">定</span><span class="mord cjk_fallback">类</span><span class="mord cjk_fallback">在</span><span class="mord cjk_fallback">内</span><span class="mord cjk_fallback">存</span><span class="mord cjk_fallback">里</span><span class="mord cjk_fallback">是</span><span class="mord cjk_fallback">否</span><span class="mord cjk_fallback">存</span><span class="mord cjk_fallback">在</span><span class="mord cjk_fallback">。</span><span class="mord cjk_fallback">不</span><span class="mord cjk_fallback">存</span><span class="mord cjk_fallback">在</span><span class="mord cjk_fallback">报</span><span class="mord cjk_fallback">错</span><span class="mord cjk_fallback">。</span><span class="mord cjk_fallback">若</span><span class="mord cjk_fallback">存</span><span class="mord cjk_fallback">在</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">则</span><span class="mord cjk_fallback">将</span><span class="mord cjk_fallback">类</span><span class="mord cjk_fallback">内</span><span class="mord cjk_fallback">部</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">属</span><span class="mord cjk_fallback">性</span><span class="mord cjk_fallback">复</span><span class="mord cjk_fallback">制</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">份</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">然</span><span class="mord cjk_fallback">后</span><span class="mord cjk_fallback">在</span><span class="mord cjk_fallback">内</span><span class="mord cjk_fallback">存</span><span class="mord cjk_fallback">（</span><span class="mord mathdefault">h</span><span class="mord mathdefault">e</span><span class="mord mathdefault">a</span><span class="mord mathdefault">p</span><span class="mord cjk_fallback">）</span><span class="mord cjk_fallback">开</span><span class="mord cjk_fallback">辟</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">块</span><span class="mord cjk_fallback">内</span><span class="mord cjk_fallback">存</span><span class="mord cjk_fallback">空</span><span class="mord cjk_fallback">间</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">将</span><span class="mord cjk_fallback">属</span><span class="mord cjk_fallback">性</span><span class="mord cjk_fallback">放</span><span class="mord cjk_fallback">到</span><span class="mord cjk_fallback">里</span><span class="mord cjk_fallback">面</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">同</span><span class="mord cjk_fallback">时</span><span class="mord cjk_fallback">内</span><span class="mord cjk_fallback">部</span><span class="mord cjk_fallback">有</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">个</span><span class="mord cjk_fallback">指</span><span class="mord cjk_fallback">针</span><span class="mord cjk_fallback">指</span><span class="mord cjk_fallback">向</span><span class="mord cjk_fallback">类</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">内</span><span class="mord cjk_fallback">存</span><span class="mord cjk_fallback">空</span><span class="mord cjk_fallback">间</span><span class="mord cjk_fallback">对</span><span class="mord cjk_fallback">象</span><span class="mord cjk_fallback">访</span><span class="mord cjk_fallback">问</span><span class="mord cjk_fallback">属</span><span class="mord cjk_fallback">性</span><span class="mord cjk_fallback">即</span><span class="mord cjk_fallback">访</span><span class="mord cjk_fallback">问</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">是</span><span class="mord cjk_fallback">对</span><span class="mord cjk_fallback">象</span><span class="mord cjk_fallback">空</span><span class="mord cjk_fallback">间</span><span class="mord cjk_fallback">里</span><span class="mord cjk_fallback">存</span><span class="mord cjk_fallback">储</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">部</span><span class="mord cjk_fallback">分</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">对</span><span class="mord cjk_fallback">象</span><span class="mord cjk_fallback">访</span><span class="mord cjk_fallback">问</span><span class="mord cjk_fallback">方</span><span class="mord cjk_fallback">法</span><span class="mord cjk_fallback">是</span><span class="mord cjk_fallback">通</span><span class="mord cjk_fallback">过</span><span class="mord cjk_fallback">内</span><span class="mord cjk_fallback">部</span><span class="mord cjk_fallback">指</span><span class="mord cjk_fallback">针</span><span class="mord cjk_fallback">找</span><span class="mord cjk_fallback">到</span><span class="mord cjk_fallback">类</span><span class="mord cjk_fallback">空</span><span class="mord cjk_fallback">间</span><span class="mord cjk_fallback">中</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">方</span><span class="mord cjk_fallback">法</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">然</span><span class="mord cjk_fallback">后</span><span class="mord cjk_fallback">再</span><span class="mord cjk_fallback">内</span><span class="mord cjk_fallback">存</span><span class="mord cjk_fallback">（</span><span class="mord cjk_fallback">栈</span><span class="mord cjk_fallback">）</span><span class="mord cjk_fallback">开</span><span class="mord cjk_fallback">辟</span><span class="mord cjk_fallback">运</span><span class="mord cjk_fallback">行</span></span></span></span>this:是系统在方法内置的对象通用名字，对象在调用方法的时候，系统会自动找到对象所保存的内存地址（heap）然后把地址赋给this    本质：局部变量<br>
+<img src="https://l3mon629.github.io/post-images/1599659155998.jpg" alt="" loading="lazy"></p>
+</blockquote>
 
                         </div>
                         
@@ -327,6 +381,7 @@ var_dump($stu);
 <li><a href="#%E9%9D%A2%E5%90%91%E5%AF%B9%E8%B1%A1%E7%AE%80%E5%8D%95%E6%8A%80%E6%9C%AF%E5%AE%9E%E7%8E%B0">面向对象简单技术实现</a></li>
 <li><a href="#%E7%B1%BB%E6%88%90%E5%91%98">类成员</a></li>
 <li><a href="#%E8%AE%BF%E9%97%AE%E4%BF%AE%E9%A5%B0%E9%99%90%E5%AE%9A%E7%AC%A6">访问修饰限定符</a></li>
+<li><a href="#%E7%B1%BB%E5%86%85%E9%83%A8%E5%AF%B9%E8%B1%A1">类内部对象</a></li>
 </ul>
 </li>
 </ul>
@@ -360,8 +415,8 @@ var_dump($stu);
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/&sharesource=qzone&title=PHP面向对象学习&pics=https://l3mon629.github.io/images/avatar.png?v=1599567626919&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/&sharesource=weibo&title=PHP面向对象学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599567626919 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/&sharesource=qzone&title=PHP面向对象学习&pics=https://l3mon629.github.io/images/avatar.png?v=1599659265015&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/&sharesource=weibo&title=PHP面向对象学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1599659265015 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -371,6 +426,10 @@ var_dump($stu);
                                                                         <span class="tag ">
                         
                         
+                        <a href="https://l3mon629.github.io/tag/8UT0h8tF6/">#
+                                                笔记
+                                                    </a>
+                                                    
                         <a href="https://l3mon629.github.io/tag/mGjsDXVh8/">#
                                                 PHP学习
                                                     </a>
@@ -461,7 +520,7 @@ var_dump($stu);
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1599567626919);
+                    newDate.setTime(1599659265015);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

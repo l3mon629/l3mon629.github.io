@@ -162,33 +162,227 @@
 
             <div class="main">
                 <div class="container">
-                    <div class="post-wrap archive">
-                        
+                    <article class="post-wrap">
+                        <header class="post-header">
+                            <h1 class="post-title">
+                                C++学习
+                            </h1>
                             
-                                <h3>
-                                    2020
-                                </h3>
+                                <!--en-->
+                                <div class="post-meta en">
+                                    Author:
+                                    <a itemprop="author" rel="author" href="/">
+                                        lemon的自留地～
+                                    </a>
+                                    <span class="post-time">
+                                Date: <a href="#">2020-09-16</a>
+                            </span>
+                                    <span class="post-readtime">Reading Time:<a
+                                    href="#">2.2
+                                    mins</a></span>
+                                    <span class="post-words">words:<a href="#">421</a></span>
+                                    
+                                            Views:
+                                            <span data-hk-page="current"> - </span>
+                                            
+                                </div>
+                                
+                        </header>
+                        
+                        <div class="post-content">
+                            <p>由于最近学校开了数据结构，而且是以c++语言来描述，由于本菜鸡转专业并没有接触过c++，特此来补习一下，暂停PHP的学习。</p>
+<p>#类</p>
+<h2 id="简单立方体类设计">简单立方体类设计</h2>
+<pre><code class="language-c++">#include &lt;iostream&gt;
+#include &lt;string&gt;
+using namespace std;
+class Cube{
+private:
+	int m_L;
+	int m_H;
+	int m_W;
+
+public:
+	
+	//设置长宽高
+	void set_L(int l)
+	{
+		m_L = l;
+	}
+
+	void set_H(int h)
+	{
+		m_H = h;
+	}
+
+	void set_W(int w)
+	{
+		m_W = w;
+	}
+
+	//获取长宽高
+	int get_L()
+	{
+		return m_L;
+	}
+
+	int get_H()
+	{
+		return m_H;
+	}
+
+	int get_W()
+	{
+		return m_W;
+	}
+
+	//获取面积
+	int get_area()
+	{
+		return 2 * (m_L * m_W + m_L * m_H + m_H * m_W);
+	}
+
+	//获取体积
+	int get_volume()	
+	{
+		return m_W * m_L * m_H;
+	}
+
+	//	成员函数判断两个立方体是否相等
+	bool isSame(Cube &amp;c1)
+	{
+		if(m_H == c1.get_H() &amp;&amp; m_W == c1.get_W() &amp;&amp; m_L == c1.get_L())
+		{
+			return true;
+		}
+		else
+			return false;
+	}	
+};
+
+//全局函数判断两个立方体是否相等
+/*
+bool isSame(Cube &amp;c1,Cube &amp;c2)
+{
+	if(c1.get_H() == c2.get_H() &amp;&amp; c1.get_W() == c2.get_W() &amp;&amp; c1.get_L() == c2.get_L())
+	{
+		return true;
+	}
+	else
+		return false;
+}
+*/
+
+
+int main(int argc, char const *argv[])
+{
+	Cube c1,c2;
+	c1.set_W(10);
+	c1.set_H(10);
+	c1.set_L(10);
+
+	c2.set_W(20);
+	c2.set_L(20);
+	c2.set_H(20);
+
+	cout &lt;&lt; &quot;c1的长宽高为：&quot; &lt;&lt; c1.get_L() &lt;&lt; &quot;,&quot; &lt;&lt; c1.get_W() &lt;&lt; &quot;,&quot; &lt;&lt; c1.get_H() &lt;&lt; endl;
+	cout &lt;&lt; &quot;c2的长宽高为：&quot; &lt;&lt; c2.get_L() &lt;&lt; &quot;,&quot; &lt;&lt; c2.get_W() &lt;&lt; &quot;,&quot; &lt;&lt; c2.get_H() &lt;&lt; endl;
+
+	cout &lt;&lt; &quot;c1的面积和体积：&quot; &lt;&lt; c1.get_area() &lt;&lt; &quot;,&quot; &lt;&lt; c1.get_volume() &lt;&lt; endl;
+	
+	/*
+	bool is_s = isSame(c1,c2);
+	if(is_s == true)
+		cout &lt;&lt; &quot;c1和c2相等&quot; &lt;&lt; endl;
+	else
+		cout &lt;&lt; &quot;c1和c2不相等&quot; &lt;&lt; endl;
+	*/
+
+	bool is_s = c1.isSame(c2);
+	if(is_s == true)
+		cout &lt;&lt; &quot;c1和c2相等&quot; &lt;&lt; endl;
+	else
+		cout &lt;&lt; &quot;c1和c2不相等&quot; &lt;&lt; endl;
+
+	return 0;
+}
+</code></pre>
+
+                        </div>
+                        
+                            <div class="post-toc">
+                                <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li><a href="#%E7%AE%80%E5%8D%95%E7%AB%8B%E6%96%B9%E4%BD%93%E7%B1%BB%E8%AE%BE%E8%AE%A1">简单立方体类设计</a></li>
+</ul>
+</li>
+</ul>
+
+                            </div>
+                            
                                 
                                     
+                                        <!--en-->
+                                        <section class="post-copyright en">
+                                            <p class="copyright-item">
+                                                <span>Author:</span>
+                                                <span>lemon的自留地～</span>
+                                            </p>
 
-                                        <article class="archive-item">
-                                            <a class="archive-item-link" href="https://l3mon629.github.io/post/glibc-yuan-ma-xue-xi/">
-                                                glibc源码学习
-                                            </a>
-                                            <span class="archive-item-date">2020-09-06 </span>
-                                        </article>
+                                            <p class="copyright-item">
+                                                <span>Permalink:</span>
+                                                <span><a href="https://l3mon629.github.io/post/cxue-xi/">https://l3mon629.github.io/post/cxue-xi/</a></span>
+                                            </p>
+
+                                            <p class="copyright-item">
+                                                <span>License:</span>
+                                                <span>MIT License</span>
+                                            </p>
+                                        </section>
                                         
-                                            
                                                 
-                    </div>
-                    <div class="pagination-container">
-                        
-                                                
+                                                    
+                                                        <!-- Share-->
+                                                        <span style="margin-right:15px">
+                                                    <i class="post-share"></i>
+                                                    <span>Share:</span>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/cxue-xi/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=qzone&title=C++学习&pics=https://l3mon629.github.io/images/avatar.png?v=1600269484702&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=weibo&title=C++学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600269484702 "><i class="fa fa-weibo "></i></a>
                                                         
+                                                                </span>
+                                                                <!--en-->
+                                                                <section class="post-tags en ">
+                                                                    <div>
+                                                                        <span>Tag(s):</span>
+                                                                        <span class="tag ">
+                        
+                                                            </span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <a href="javascript:window.history.back();">back</a>
+                                                                        <span>&dot;</span>
+                                                                        <a href="#">home</a>
+                                                                    </div>
+                                                                </section>
                                                                 
-                    </div>
+                                                                                <!---->
+                                                                                <section class="post-nav">
+                                                                                    
+                                                                                            
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/unsorted-bin-attack/">
+                                                                                                    unsorted bin attack
+                                                                                                </a>
+                                                                                                
+                                                                                </section>
+                    </article>
                 </div>
+                
+                                            
             </div>
+    </div>
+    </div>
     </div>
     
         <footer id="footer" class="footer">
@@ -251,5 +445,8 @@
                 </script>
         </div>
 </body>
+<script>
+    scroll();
+</script>
 
 </html>

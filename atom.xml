@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://l3mon629.github.io</id>
     <title>lemon的自留地～</title>
-    <updated>2020-09-18T00:59:24.988Z</updated>
+    <updated>2020-09-18T11:40:14.016Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://l3mon629.github.io"/>
     <link rel="self" href="https://l3mon629.github.io/atom.xml"/>
@@ -10,6 +10,13 @@
     <logo>https://l3mon629.github.io/images/avatar.png</logo>
     <icon>https://l3mon629.github.io/favicon.ico</icon>
     <rights>All rights reserved 2020, lemon的自留地～</rights>
+    <entry>
+        <title type="html"><![CDATA[ubuntu18中的off-by-one]]></title>
+        <id>https://l3mon629.github.io/post/ubuntu18-zhong-de-off-by-one/</id>
+        <link href="https://l3mon629.github.io/post/ubuntu18-zhong-de-off-by-one/">
+        </link>
+        <updated>2020-09-18T11:10:06.000Z</updated>
+    </entry>
     <entry>
         <title type="html"><![CDATA[C++学习]]></title>
         <id>https://l3mon629.github.io/post/cxue-xi/</id>
@@ -72,12 +79,5 @@
         <link href="https://l3mon629.github.io/post/glibc-yuan-ma-xue-xi/">
         </link>
         <updated>2020-09-06T08:55:06.000Z</updated>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[ctfwiki-unlink—2014 HITCON stkof]]></title>
-        <id>https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/</id>
-        <link href="https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/">
-        </link>
-        <updated>2020-09-06T03:41:43.000Z</updated>
     </entry>
 </feed>

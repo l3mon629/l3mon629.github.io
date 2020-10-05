@@ -49,7 +49,6 @@
                                 })();
                             </script>
                             
-        <script src="https://cdn.jsdelivr.net/npm/typed.js@2.0.11/lib/typed.min.js"></script>
 </head>
 
 <body>
@@ -163,67 +162,188 @@
 
             <div class="main">
                 <div class="container">
-                    <div class="intro">
-                        <div class="avatar">
-                            <a href="https://l3mon629.github.io"><img src="https://l3mon629.github.io/images/avatar.png?v=1601913876359"></a>
-                        </div>
-                        <div class="nickname">
-                            lemon
-                        </div>
-                        <div class="description">
-                            <span id="subtitle">
-                                女人只会影响我拔剑的速度(剑，最要远离的就是感情)
+                    <article class="post-wrap">
+                        <header class="post-header">
+                            <h1 class="post-title">
+                                sublime一些使用技巧和美化
+                            </h1>
+                            
+                                <!--en-->
+                                <div class="post-meta en">
+                                    Author:
+                                    <a itemprop="author" rel="author" href="/">
+                                        lemon的自留地～
+                                    </a>
+                                    <span class="post-time">
+                                Date: <a href="#">2020-10-05</a>
                             </span>
+                                    <span class="post-readtime">Reading Time:<a
+                                    href="#">1.9
+                                    mins</a></span>
+                                    <span class="post-words">words:<a href="#">418</a></span>
+                                    
+                                            Views:
+                                            <span data-hk-page="current"> - </span>
+                                            
+                                </div>
+                                
+                        </header>
+                        
+                        <div class="post-content">
+                            <p>美化不记录了，官方文档详细的一批，但是着重推荐一个主题Material Theme！！！<br>
+这也太漂亮了兄弟集美们，都给我装！！<br>
+https://packagecontrol.io/packages/Material%20Theme</p>
+<p>一些快捷键（自己复习用）</p>
+<pre><code>ctrl + tab:标签页切换
+command + j:合并下一行
++ ] : 向右缩进
++ [
+   l:选择当前行
+   回车:相当于vim的o
+   shift + enter: vim + O
+   方向键:移动到最头
+   shift + 方向键:上述功能+选择
+   shift + p: reindent lines   调整缩紧
+   d:选中当前单词，一直按下去有奇效
+   /:增加或者取消注释
+
+option + 方向键:按单词移动
+</code></pre>
+<p>绑定快捷键：打开命令面板，搜key bindings来绑定快捷键</p>
+<p>一些包安装<br>
+AdvancedNewFile:新建文件利器，还有自动补全，我爱了   comman+option+n<br>
+syncedsidebar:打开一个文件，在侧边栏同步显示，太良心了</p>
+<p>快速定位文件及其内容：<br>
+command + p<br>
+附加<br>
+&quot;:&quot; : 定位到行号<br>
+@ : 定位到函数名<br>
+# : 查找字符串</p>
+<p>查找功能：<br>
+command + f<br>
+替换：<br>
+command + option + f</p>
+<p>文件跳回：<br>
+ctrl + -</p>
+<p>自定义pwn-heap模版（爽）</p>
+<pre><code class="language-xml">&lt;snippet&gt;
+	&lt;content&gt;&lt;![CDATA[
+
+from pwn import *
+
+local = 1
+
+binary = &quot;${1}&quot;
+
+if local == 1:
+	p = process(binary)
+else:
+	p = remote(&quot;${2}&quot;,${3})
+
+def dbg():
+	context.log_level = 'debug'
+
+context.terminal = ['tmux','splitw','-h']
+
+def add(size,content):
+    p.sendlineafter('${4}','${5}'')
+	p.sendlineafter('${6}',str(size))
+	p.sendafter('${7}',content)
+
+def show(index):
+	p.sendlineafter('${8}','${9}'')
+	p.sendlineafter('${10}',str(index))
+
+def free(index):
+	p.sendlineafter('${11}','${12}'')
+	p.sendlineafter('${13}',str(index))
+
+def edit(index,content):
+	p.sendlineafter('${14}','${15}'')
+	p.sendlineafter('${16}',str(index))
+
+gdb.attach(p)
+
+p.interactive()
+
+]]&gt;&lt;/content&gt;
+	&lt;!-- Optional: Set a tabTrigger to define how to trigger the snippet --&gt;
+	&lt;tabTrigger&gt;pwn-heap&lt;/tabTrigger&gt;
+	&lt;!-- Optional: Set a scope to limit where the snippet will trigger --&gt;
+	&lt;scope&gt;source.python&lt;/scope&gt;
+&lt;/snippet&gt;
+</code></pre>
+
                         </div>
-                        <div class="links">
+                        
+                            <div class="post-toc">
+                                
+                            </div>
                             
                                 
+                                    
+                                        <!--en-->
+                                        <section class="post-copyright en">
+                                            <p class="copyright-item">
+                                                <span>Author:</span>
+                                                <span>lemon的自留地～</span>
+                                            </p>
+
+                                            <p class="copyright-item">
+                                                <span>Permalink:</span>
+                                                <span><a href="https://l3mon629.github.io/post/sublime-yi-xie-shi-yong-ji-qiao-he-mei-hua/">https://l3mon629.github.io/post/sublime-yi-xie-shi-yong-ji-qiao-he-mei-hua/</a></span>
+                                            </p>
+
+                                            <p class="copyright-item">
+                                                <span>License:</span>
+                                                <span>MIT License</span>
+                                            </p>
+                                        </section>
                                         
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                                
-                                        
-                        </div>
-                    </div>
+                                                
+                                                    
+                                                        <!-- Share-->
+                                                        <span style="margin-right:15px">
+                                                    <i class="post-share"></i>
+                                                    <span>Share:</span>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/sublime-yi-xie-shi-yong-ji-qiao-he-mei-hua/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/sublime-yi-xie-shi-yong-ji-qiao-he-mei-hua/&sharesource=qzone&title=sublime一些使用技巧和美化&pics=https://l3mon629.github.io/images/avatar.png?v=1601913876359&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/sublime-yi-xie-shi-yong-ji-qiao-he-mei-hua/&sharesource=weibo&title=sublime一些使用技巧和美化 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601913876359 "><i class="fa fa-weibo "></i></a>
+                                                        
+                                                                </span>
+                                                                <!--en-->
+                                                                <section class="post-tags en ">
+                                                                    <div>
+                                                                        <span>Tag(s):</span>
+                                                                        <span class="tag ">
+                        
+                                                            </span>
+                                                                    </div>
+                                                                    <div>
+                                                                        <a href="javascript:window.history.back();">back</a>
+                                                                        <span>&dot;</span>
+                                                                        <a href="#">home</a>
+                                                                    </div>
+                                                                </section>
+                                                                
+                                                                                <!---->
+                                                                                <section class="post-nav">
+                                                                                    
+                                                                                            
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/zhan-qian-yi-zong-jie/">
+                                                                                                    栈迁移总结
+                                                                                                </a>
+                                                                                                
+                                                                                </section>
+                    </article>
                 </div>
+                
+                                            
             </div>
     </div>
-
-</body>
-<script>
-    // type 
-    var typed = new Typed("#subtitle", {
-        strings: ['女人只会影响我拔剑的速度(剑，最要远离的就是感情)', '', ''],
-        startDelay: 10,
-        typeSpeed: 200,
-        loop: true,
-        backSpeed: 100,
-        showCursor: true
-    });
-    //head title
-    var titleTime;
-    document.addEventListener("visibilitychange", function() {
-        document.hidden ? (document.title = "\uD83D\uDE25" + OriginTitile, clearTimeout(titleTime)) : (document.title = "\uD83D\uDE1D" + OriginTitile, titleTime = setTimeout(function() {
-            document.title = OriginTitile
-        }, 2E3))
-    });
-    var OriginTitile = document.title;
-</script>
-
+    </div>
+    </div>
+    
         <footer id="footer" class="footer">
             <div class="copyright">
                 
@@ -282,5 +402,10 @@
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>
+        </div>
+</body>
+<script>
+    scroll();
+</script>
 
 </html>

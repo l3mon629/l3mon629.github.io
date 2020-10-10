@@ -83,7 +83,7 @@
                         <input id="switch_default" type="checkbox" class="switch_default">
                         <label for="switch_default" class="toggleBtn"></label>
             </div>
-            <form id="gridea-search-form" data-update="1602319950977" action="/search/index.html">
+            <form id="gridea-search-form" data-update="1602345761352" action="/search/index.html">
                 <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
             </form>
         </div>
@@ -102,7 +102,7 @@
                         <!--zh-->
                         <a id="mobile-toggle-theme-zh" class="a zh">&nbsp;&#x6697;&#x9ED1;</a>
                     </div>
-                    <form id="gridea-search-form" data-update="1602319950977" action="/search/index.html">
+                    <form id="gridea-search-form" data-update="1602345761352" action="/search/index.html">
                         <input class="search-input" autocomplete="off" spellcheck="false" name="q" autofocus="true" placeholder="Search...">
                     </form>
                     <!--en-->
@@ -178,9 +178,9 @@
                                 Date: <a href="#">2020-10-09</a>
                             </span>
                                     <span class="post-readtime">Reading Time:<a
-                                    href="#">1.8
+                                    href="#">2.4
                                     mins</a></span>
-                                    <span class="post-words">words:<a href="#">497</a></span>
+                                    <span class="post-words">words:<a href="#">625</a></span>
                                     
                                             Views:
                                             <span data-hk-page="current"> - </span>
@@ -245,6 +245,30 @@ scale=2 表示计算结果采用两位小数点<br>
 <p>双圆括号也可以来做运算</p>
 <pre><code class="language-shell">echo $((1+2))
 </code></pre>
+<h2 id="格式化输出">格式化输出</h2>
+<p><strong>echo</strong><br>
+命令选项：<br>
+-n 不要自动换行<br>
+-e 若字符串中出现以下字符，则特别处理，而不会将它当成文本输出<br>
+转义字符：<br>
+\a发出警告声<br>
+\b删除前一个字符<br>
+\c最后不加上换行符号<br>
+等等</p>
+<h2 id="shell的输入">shell的输入</h2>
+<p><strong>read</strong></p>
+<p>小例子，用户名和登陆</p>
+<pre><code class="language-shell">#!/bin/zsh
+
+echo -n &quot;Please login: &quot;
+read login
+echo -n &quot;Please input password: &quot;
+read password
+
+echo &quot;Your login: $login&quot;
+echo &quot;Your pass: $password&quot;
+</code></pre>
+<p>不显示密码，和超时</p>
 
                         </div>
                         
@@ -257,6 +281,8 @@ scale=2 表示计算结果采用两位小数点<br>
 <li><a href="#shell%E4%B8%AD%E7%9A%84%E7%AE%A1%E9%81%93%E5%BA%94%E7%94%A8">shell中的管道应用</a></li>
 <li><a href="#%E9%87%8D%E5%AE%9A%E5%90%91">重定向</a></li>
 <li><a href="#%E6%95%B0%E5%AD%A6%E8%BF%90%E7%AE%97">数学运算</a></li>
+<li><a href="#%E6%A0%BC%E5%BC%8F%E5%8C%96%E8%BE%93%E5%87%BA">格式化输出</a></li>
+<li><a href="#shell%E7%9A%84%E8%BE%93%E5%85%A5">shell的输入</a></li>
 </ul>
 </li>
 </ul>
@@ -290,8 +316,8 @@ scale=2 表示计算结果采用两位小数点<br>
                                                     <i class="post-share"></i>
                                                     <span>Share:</span>
                                                         <a title="QR Code" target="_blank" href="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://l3mon629.github.io/post/shell-bian-cheng-xue-xi/"><i class="fa fa-qrcode"></i></a>
-                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/shell-bian-cheng-xue-xi/&sharesource=qzone&title=shell编程学习&pics=https://l3mon629.github.io/images/avatar.png?v=1602319950977&summary="><i class="fa fa-qq"></i></a>
-                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/shell-bian-cheng-xue-xi/&sharesource=weibo&title=shell编程学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1602319950977 "><i class="fa fa-weibo "></i></a>
+                                                        <a title="QQ" target="_blank" href="https://sns.qzone.qq.com/cgi-bin/qzshare/cgi_qzshare_onekey?url=https://l3mon629.github.io/post/shell-bian-cheng-xue-xi/&sharesource=qzone&title=shell编程学习&pics=https://l3mon629.github.io/images/avatar.png?v=1602345761352&summary="><i class="fa fa-qq"></i></a>
+                                                        <a title="Weibo" target="_blank" href="https://service.weibo.com/share/share.php?url=https://l3mon629.github.io/post/shell-bian-cheng-xue-xi/&sharesource=weibo&title=shell编程学习 + " - " + &pic="https://l3mon629.github.io/images/avatar.png?v=1602345761352 "><i class="fa fa-weibo "></i></a>
                                                         
                                                                 </span>
                                                                 <!--en-->
@@ -326,6 +352,22 @@ scale=2 表示计算结果采用两位小数点<br>
                 </div>
                 
                                             
+                                                <script type="application/javascript" src="//unpkg.com/valine@latest/dist/Valine.min.js"></script>
+<div id="vlaine-comment"></div>
+<script type="application/javascript">
+    new Valine({
+        el: '#vlaine-comment',
+        appId: '',
+        appKey: '',
+        pageSize: 10,
+        avatar: 'mp',
+        placeholder: '来都来了，不妨评论一下',
+        visitor: true,
+        highlight: true,
+        recordIP: true,
+    })
+</script>
+                                                    
             </div>
     </div>
     </div>
@@ -334,7 +376,7 @@ scale=2 表示计算结果采用两位小数点<br>
         <footer id="footer" class="footer">
             <div class="copyright">
                 
-                        lemon_wants_a_girlfriend
+                        努力成长
                             
                                 <b id="hitokoto"></b><br>
                                 
@@ -385,7 +427,7 @@ scale=2 表示计算结果采用两位小数点<br>
                     CheckVersion();
                     
                     var newDate = new Date();
-                    newDate.setTime(1602319950977);
+                    newDate.setTime(1602345761352);
                     console.log(" Blog Update Time: " + newDate.toLocaleDateString());
                     console.log("\n %c \u26a1Theme:Chic Author's Blog:https://blog.itjoker.cn  Write By ITJoker  \n\n", "color: #ffffff; background: rgba(49, 49, 49, 0.85); padding:5px 0;border-radius:5px;");
                 </script>
